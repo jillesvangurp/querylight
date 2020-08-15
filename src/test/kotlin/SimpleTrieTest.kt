@@ -1,3 +1,4 @@
+import search.SimpleStringTrie
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

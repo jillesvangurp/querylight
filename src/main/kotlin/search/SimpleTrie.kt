@@ -1,3 +1,5 @@
+package search
+
 private class TrieNode {
     val children: MutableMap<Char, TrieNode> = mutableMapOf()
     var isLeaf = false
@@ -104,7 +106,7 @@ class SimpleStringTrie {
         /**
          * Useful if you want to build a trie for an existing map so you can figure out a matching prefix that has an entry
          * @param map a map
-         * @return a SimpleStringTrie for the map.
+         * @return a search.SimpleStringTrie for the map.
          */
         fun from(map: Map<String, *>): SimpleStringTrie {
             val st = SimpleStringTrie()
