@@ -81,7 +81,7 @@ class BoolQuery(
                 context.include(reduced.ids())
             }
         }
-        println(context)
+        // println(context)
         val mustHits = if (must.isEmpty() && filter.isNotEmpty()) {
             context.hits()
         } else {
@@ -97,7 +97,7 @@ class BoolQuery(
                 emptyList()
             }
         }
-        println("must $mustHits")
+        // println("must $mustHits")
 
         if (must.isNotEmpty()) {
             context.setIncludeIds(mustHits.ids())
@@ -119,10 +119,6 @@ class BoolQuery(
             else -> if(shouldHits.isEmpty()) mustHits else mustHits.and(shouldHits)
         }
     }
-}
-
-fun reduceHandleEmpty() {
-
 }
 
 class MatchQuery(
