@@ -16,8 +16,9 @@ interface Tokenizer {
 
 
 class SplittingTokenizer: Tokenizer {
+    val re = Regex("""\s+""",RegexOption.MULTILINE)
     override fun tokenize(text: String): List<String> {
-        return text.split(' ').toList()
+        return re.split(text).filter { !it.isNullOrBlank() }.toList()
     }
 }
 
