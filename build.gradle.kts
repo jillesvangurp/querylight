@@ -13,6 +13,7 @@ repositories {
 kotlin {
     jvm()
     js {
+        nodejs()
     }
     sourceSets {
         val commonMain by getting {

@@ -14,6 +14,7 @@ interface Tokenizer {
     fun tokenize(text: String): List<String>
 }
 
+
 class SplittingTokenizer: Tokenizer {
     override fun tokenize(text: String): List<String> {
         return text.split(' ').toList()
@@ -24,8 +25,15 @@ interface TokenFilter {
     fun filter(tokens: List<String>): List<String>
 }
 
+class InterpunctionTextFilter: TextFilter {
+    private val interpunctionRE = """[-_.,\?\!\+=]""".toRegex()
+    override fun filter(text: String): String {
+        return interpunctionRE.replace(text, " ")
+    }
+}
+
 class Analyzer(
-    private val textFilters: List<TextFilter> = listOf(LowerCaseTextFilter()),
+    private val textFilters: List<TextFilter> = listOf(LowerCaseTextFilter(), InterpunctionTextFilter()),
     private val tokenizer: Tokenizer = SplittingTokenizer(),
     private val tokenFilter: List<TokenFilter> = emptyList()
 ) {

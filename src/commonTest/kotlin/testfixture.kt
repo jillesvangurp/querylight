@@ -16,7 +16,7 @@ data class SampleObject(
     )
 }
 
-fun documentIndex(): DocumentIndex {
+fun testIndex(): DocumentIndex {
     val documentIndex = DocumentIndex(
         mutableMapOf(
             "title" to TextFieldIndex(),

@@ -45,6 +45,7 @@ class TextFieldIndex(val analyzer: Analyzer = Analyzer(), val queryAnalyzer: Ana
             val tfIdf = tf * idf
             docId to tfIdf
         }
+        // println(term + " in " + reverseMap.map { it.key + " -> " + it.value }.joinToString("\n") + ": " + unsorted.size)
         return unsorted.sortedByDescending { (_,tfIdf) -> tfIdf }
     }
 

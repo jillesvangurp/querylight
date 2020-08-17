@@ -7,7 +7,7 @@ class BoolTest {
     
     @Test
     fun shouldFilterCorrectly() {
-        val index = documentIndex()
+        val index = testIndex()
 
         val results = index.search(BoolQuery(filter = listOf(
             MatchQuery("title", "ktjsearch")
@@ -19,7 +19,7 @@ class BoolTest {
 
     @Test
     fun shouldOnlyFindKtsearch() {
-        val index = documentIndex()
+        val index = testIndex()
 
         val esClause = MatchQuery("description", "elasticsearch")
         index.search(esClause).apply {

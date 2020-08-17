@@ -1,9 +1,6 @@
 import io.kotest.matchers.shouldBe
-import search.Document
-import search.DocumentIndex
 import search.MatchQuery
 import search.TextFieldIndex
-import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -33,9 +30,9 @@ class IndexTest {
 
     @Test
     fun shouldIndexDocuments() {
-        val documentIndex = documentIndex()
+        val index = testIndex()
 
-        val hits = documentIndex.search(MatchQuery("title", "Elasticsearch"))
+        val hits = index.search(MatchQuery("title", "Elasticsearch"))
         hits.size shouldBe 1
     }
 }
