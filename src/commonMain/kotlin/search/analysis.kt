@@ -27,7 +27,7 @@ interface TokenFilter {
 }
 
 class InterpunctionTextFilter: TextFilter {
-    private val interpunctionRE = """[-_.,\?\!\+=]""".toRegex()
+    private val interpunctionRE = """[\\\]\[\'\"\!,.@#$%^&*()_+-={}|><`~±§?]""".toRegex()
     override fun filter(text: String): String {
         return interpunctionRE.replace(text, " ")
     }

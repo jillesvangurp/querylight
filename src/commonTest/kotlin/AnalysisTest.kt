@@ -8,7 +8,17 @@ class AnalysisTest {
         val standardAnalyzer = Analyzer()
 
         standardAnalyzer.apply {
+            analyze("") shouldBe emptyList()
+            analyze("""!@#$%^&*()_+=-{}][\\|'\"';:/?.>,<`~§±""") shouldBe emptyList()
+            analyze("\n\t ") shouldBe emptyList()
             analyze(",.foo -bar_\n\tfoo.") shouldBe listOf("foo","bar","foo")
+            analyze("foo,bar,foo") shouldBe listOf("foo","bar","foo")
         }
+    }
+
+    @Test
+    fun shouldStrip() {
+        val re = "[\\]\\[]".toRegex()
+        re.replace("[]","") shouldBe ""
     }
 }
