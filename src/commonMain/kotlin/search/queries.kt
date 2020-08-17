@@ -127,7 +127,7 @@ class MatchQuery(
     private val operation: OP = OP.AND
 ) : Query {
     override fun hits(documentIndex: DocumentIndex, context: QueryContext): Hits {
-        val fieldIndex = documentIndex[field]
+        val fieldIndex = documentIndex.getFieldIndex(field)
         if (fieldIndex != null) {
             val searchTerms = fieldIndex.queryAnalyzer.analyze(text)
             val collectedHits = mutableMapOf<String, Double>()
@@ -173,6 +173,11 @@ class MatchQuery(
             return emptyList()
         }
     }
+}
+
+class MatchAll: Query {
+    override fun hits(documentIndex: DocumentIndex, context: QueryContext): Hits =
+        documentIndex.ids().map { it to 1.0 }
 }
 
 fun Hits.ids() = this.map { it.first }
