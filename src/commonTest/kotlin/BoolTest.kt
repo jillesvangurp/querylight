@@ -1,6 +1,13 @@
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldContainAll
+import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import search.BoolQuery
+import search.Document
+import search.DocumentIndex
 import search.MatchQuery
+import search.TextFieldIndex
+import search.ids
 import kotlin.test.Test
 
 class BoolTest {
@@ -36,6 +43,42 @@ class BoolTest {
         )).apply {
             size shouldBe 1
         }
+    }
+    data class Foo(val id: String, val title:String) {
+        fun doc() = Document(id, mapOf("title" to listOf(title)))
+    }
+
+    @Test
+    fun shouldDoBooleanLogic() {
+        val idx = DocumentIndex(mapping = mutableMapOf("title" to TextFieldIndex()))
+
+
+        idx.index(Foo("1","foo").doc())
+        idx.index(Foo("2","bar").doc())
+        idx.index(Foo("3","foobar").doc())
+        idx.index(Foo("4","foo bar").doc())
+        idx.index(Foo("5","bar foo").doc())
+        idx.index(Foo("6","barfoo").doc())
+
+        val fooClause = MatchQuery("title", "foo")
+        val barClause = MatchQuery("title", "bar")
+
+        idx.search(BoolQuery(must = listOf(fooClause,barClause))).ids().apply {
+            shouldNotContain("1")
+            shouldContainAll(listOf("4","5"))
+        }
+        idx.search(BoolQuery(filter = listOf(fooClause,barClause))).ids().apply {
+            shouldNotContain("1")
+            shouldContainAll(listOf("4","5"))
+        }
+        idx.search(BoolQuery(
+            filter = listOf(fooClause,barClause),
+            must= listOf(fooClause))).ids().apply {
+            shouldNotContain("1")
+            shouldContainAll(listOf("4", "5"))
+        }
+        idx.search(BoolQuery(should = listOf(fooClause,barClause))).ids() shouldContainAll listOf("1","2","4","5")
+
     }
 
 }

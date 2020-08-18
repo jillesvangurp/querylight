@@ -81,7 +81,6 @@ class BoolQuery(
                 context.include(reduced.ids())
             }
         }
-        // println(context)
         val mustHits = if (must.isEmpty() && filter.isNotEmpty()) {
             context.hits()
         } else {
@@ -97,14 +96,12 @@ class BoolQuery(
                 emptyList()
             }
         }
-        // println("must $mustHits")
 
         if (must.isNotEmpty()) {
             context.setIncludeIds(mustHits.ids())
         }
         val mappedShoulds = should.map { it.hits(documentIndex, context) }
         val shouldHits = if(mappedShoulds.isNotEmpty()) mappedShoulds.reduce(Hits::or) else emptyList()
-
         return when {
             must.isEmpty() && should.isEmpty() -> mustHits // results from the filter are put here
             filter.isEmpty() && should.isEmpty() -> mustHits // whatever came out of evaluating the must clauses
@@ -190,13 +187,19 @@ fun Hits.and(other: Hits): Hits {
     }
     val rightMap = right.toMap()
     return left.map {
-        it.first to it.second + (rightMap[it.first] ?: 0.0)
-    }.filter { it.second > 0.0 }.sortedByDescending { it.second }
+
+        val rightValue = rightMap[it.first]
+        if(rightValue == null) {
+            null
+        } else {
+            it.first to it.second + (rightValue ?: 0.0)
+        }
+    }.filterNotNull().filter { it.second > 0.0 }.sortedByDescending { it.second }
 }
 
 fun Hits.or(other: Hits): Hits {
     val collectedHits = mutableMapOf<String, Double>()
-    collectedHits.plus(this)
+    collectedHits.putAll(this)
     other.forEach { hit ->
         collectedHits[hit.first] = hit.second + (collectedHits[hit.first] ?: 0.0)
     }
