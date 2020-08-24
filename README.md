@@ -35,7 +35,7 @@ repositories {
 and then add the dependency:
 
 ```kotlin
-implementation("com.github.jillesvangurp:ktjsearch:0.0.1")
+implementation("com.github.jillesvangurp:ktjsearch:0.0.2")
 ```
 
 For older versions of gradle you may have to specify a postfix `-jvm` or `-js`. Supposedly recent versions are smarter about figuring out multiplatform.
