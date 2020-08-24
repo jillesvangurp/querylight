@@ -41,9 +41,15 @@ kotlin {
                 implementation(kotlin("test-js"))
             }
         }
-        
     }
+}
 
+publishing {
+    repositories {
+        maven {
+            url = uri("file://$projectDir/localRepo")
+        }
+    }
 }
 
 kotlinter {
