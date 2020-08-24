@@ -46,7 +46,7 @@ fun testIndex(): DocumentIndex {
         SampleObject(
             id="solr",
             title = "Apache Solr & Lucene",
-            description = "An alternative to Elasticsearch that lives in the same OSS project as Apache Lucene, which is used by both."
+            description = "An alternative to Elasticsearch that lives in the same OSS project as Apache Lucene, which is used by both but not by ktjsearch."
         ),
         SampleObject(
             id="es",

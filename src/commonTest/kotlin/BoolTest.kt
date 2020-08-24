@@ -2,10 +2,13 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.collections.shouldNotContainAll
+import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
+import io.kotest.matchers.ints.shouldBeLessThan
 import io.kotest.matchers.shouldBe
 import search.BoolQuery
 import search.Document
 import search.DocumentIndex
+import search.Hits
 import search.MatchQuery
 import search.TextFieldIndex
 import search.ids
@@ -45,6 +48,30 @@ class BoolTest {
             size shouldBe 1
         }
     }
+
+    fun Hits.shouldAppearBefore(id1: String, id2: String) {
+        val i1 = this.ids().indexOf(id1)
+        val i2 = this.ids().indexOf(id2)
+        i1 shouldBeGreaterThanOrEqual 0
+        i2 shouldBeGreaterThanOrEqual 0
+        i1 shouldBeLessThan i2
+    }
+    @Test
+    fun shouldRank() {
+        val index = testIndex()
+        val q=BoolQuery(should = listOf(MatchQuery("title","ktjsearch"), MatchQuery("description","ktjsearch")))
+        index.search(q).apply {
+            forEach {
+                println("hit: $it")
+            }
+            this.ids() shouldContainAll listOf("ktjsearch", "es", "solr")
+            // ktjsearch ranks higher because it appears in the title and description
+            this.shouldAppearBefore("ktjsearch","es")
+            this.shouldAppearBefore("ktjsearch","solr")
+        }
+    }
+
+
     data class Foo(val id: String, val title:String) {
         fun doc() = Document(id, mapOf("title" to listOf(title)))
     }
