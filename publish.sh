@@ -11,5 +11,7 @@ echo $1 | grep -E -q '^[0-9]+\.[0-9]+(\.[0-9]+)$' || die "Semantic Version argum
 export TAG=$1
 echo "publishing $TAG"
 
+git tag $TAG
 gradle  -Pgroup=com.github.jillesvangurp -Pversion=$TAG publish
 rsync -azp  localrepo/* jillesvangurpcom@ftp.jillesvangurp.com:/srv/home/jillesvangurpcom/domains/jillesvangurp.com/htdocs/www/maven
+git push origin $TAG
