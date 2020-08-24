@@ -1,6 +1,7 @@
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldNotContain
+import io.kotest.matchers.collections.shouldNotContainAll
 import io.kotest.matchers.shouldBe
 import search.BoolQuery
 import search.Document
@@ -59,26 +60,29 @@ class BoolTest {
         idx.index(Foo("4","foo bar").doc())
         idx.index(Foo("5","bar foo").doc())
         idx.index(Foo("6","barfoo").doc())
+        idx.index(Foo("7","bar foo baz").doc())
 
         val fooClause = MatchQuery("title", "foo")
         val barClause = MatchQuery("title", "bar")
+        val bazClause = MatchQuery("title", "baz")
 
         idx.search(BoolQuery(must = listOf(fooClause,barClause))).ids().apply {
             shouldNotContain("1")
-            shouldContainAll(listOf("4","5"))
+            shouldContainAll(listOf("4","5","7"))
         }
         idx.search(BoolQuery(filter = listOf(fooClause,barClause))).ids().apply {
             shouldNotContain("1")
-            shouldContainAll(listOf("4","5"))
+            shouldContainAll(listOf("4","5","7"))
         }
         idx.search(BoolQuery(
             filter = listOf(fooClause,barClause),
-            must= listOf(fooClause))).ids().apply {
-            shouldNotContain("1")
-            shouldContainAll(listOf("4", "5"))
+            must= listOf(bazClause))).ids().apply {
+            shouldNotContainAll(listOf("1","4","5"))
+            shouldContainAll(listOf("7"))
         }
-        idx.search(BoolQuery(should = listOf(fooClause,barClause))).ids() shouldContainAll listOf("1","2","4","5")
-
+        idx.search(BoolQuery(should = listOf(fooClause,barClause))).ids().apply {
+            shouldContainAll(listOf("1","2","4","5","7"))
+            shouldNotContainAll(listOf("6"))
+        }
     }
-
 }
