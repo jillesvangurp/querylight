@@ -1,7 +1,7 @@
 plugins {
-    kotlin("multiplatform") version "1.4.0"
-    id("com.github.ben-manes.versions") version "0.28.0" // gradle dependencyUpdates -Drevision=release
-    id("org.jmailen.kotlinter") version "2.4.1"
+    kotlin("multiplatform") version "1.4.10"
+    id("com.github.ben-manes.versions") version "0.33.0" // gradle dependencyUpdates -Drevision=release
+    id("org.jmailen.kotlinter") version "3.2.0"
     id("maven-publish")
 
 }
@@ -25,7 +25,7 @@ kotlin {
             dependencies {
                 implementation(kotlin("test-common"))
                 implementation(kotlin("test-annotations-common"))
-                implementation("io.kotest:kotest-assertions-core:4.1.3")
+                implementation("io.kotest:kotest-assertions-core:4.3.0")
             }
         }
 
