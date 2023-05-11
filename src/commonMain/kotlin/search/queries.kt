@@ -192,7 +192,7 @@ fun Hits.and(other: Hits): Hits {
         if(rightValue == null) {
             null
         } else {
-            it.first to it.second + (rightValue ?: 0.0)
+            it.first to it.second + rightValue
         }
     }.filterNotNull().filter { it.second > 0.0 }.sortedByDescending { it.second }
 }

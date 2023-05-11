@@ -6,7 +6,7 @@ interface TextFilter {
 
 class LowerCaseTextFilter: TextFilter {
     override fun filter(text: String): String {
-        return text.toLowerCase()
+        return text.lowercase()
     }
 }
 
@@ -18,7 +18,7 @@ interface Tokenizer {
 class SplittingTokenizer: Tokenizer {
     val re = Regex("""\s+""",RegexOption.MULTILINE)
     override fun tokenize(text: String): List<String> {
-        return re.split(text).filter { !it.isNullOrBlank() }.toList()
+        return re.split(text).filter { it.isNotBlank() }.toList()
     }
 }
 
@@ -27,7 +27,7 @@ interface TokenFilter {
 }
 
 class InterpunctionTextFilter: TextFilter {
-    private val interpunctionRE = """[\\\]\[\'\"\!,.@#$%^&*()_+-={}|><`~±§?]""".toRegex()
+    private val interpunctionRE = """[\\\]\['"!,.@#$%^&*()_+-={}|><`~±§?]""".toRegex()
     override fun filter(text: String): String {
         return interpunctionRE.replace(text, " ")
     }
