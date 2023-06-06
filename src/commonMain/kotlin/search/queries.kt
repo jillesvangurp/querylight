@@ -2,53 +2,6 @@
 
 package search
 
-class QueryContext(
-) {
-    private var score: Boolean = true
-    private var excludeIds: MutableSet<String>? = null
-    private var includeIds: MutableSet<String>? = null
-
-    fun exclude(ids: List<String>) {
-        if (excludeIds == null) {
-            excludeIds = mutableSetOf()
-        }
-        excludeIds?.addAll(ids)
-    }
-
-    fun include(ids: List<String>) {
-        if (includeIds == null) {
-            includeIds = mutableSetOf()
-        }
-        includeIds?.addAll(ids)
-    }
-
-    fun setIncludeIds(ids: List<String>) {
-        if (includeIds == null) {
-            includeIds = mutableSetOf()
-        } else {
-            includeIds?.clear()
-        }
-        includeIds?.addAll(ids)
-    }
-
-    fun <T> withFilterMode(block: QueryContext.() -> T): T {
-        this.score = false
-        val result = block.invoke(this)
-        this.score = true
-        return result
-    }
-
-    fun hits(): Hits = includeIds?.filter { true != excludeIds?.contains(it) }?.map { (it to 1.0) }
-        ?: throw IllegalStateException("cannot get hits from uninitialized context")
-
-    fun keep(id: String) = true != excludeIds?.contains(id) && true == includeIds?.contains(id)
-
-    override fun toString(): String {
-        return "i:$includeIds e:$excludeIds $score"
-    }
-
-}
-
 interface Query {
     fun hits(documentIndex: DocumentIndex, context: QueryContext = QueryContext()): Hits
 }
@@ -73,7 +26,8 @@ class BoolQuery(
                 context.exclude(excluded.ids())
                 excluded
             }
-            context.exclude(if(excludedHits.isNotEmpty())excludedHits.reduce(Hits::and).map { it.first } else emptyList())
+            context.exclude(
+                if (excludedHits.isNotEmpty()) excludedHits.reduce(Hits::and).map { it.first } else emptyList())
 
             val filtered = filter.map { it.hits(documentIndex, this) }
             if (filtered.isNotEmpty()) {
@@ -86,7 +40,7 @@ class BoolQuery(
         } else {
             val mappedMusts = must.map { it.hits(documentIndex, context) }
             if (mappedMusts.isNotEmpty()) {
-                if(filter.isNotEmpty()) {
+                if (filter.isNotEmpty()) {
                     (listOf(context.hits()) + mappedMusts).reduce(Hits::and)
 
                 } else {
@@ -101,7 +55,7 @@ class BoolQuery(
             context.setIncludeIds(mustHits.ids())
         }
         val mappedShoulds = should.map { it.hits(documentIndex, context) }
-        val shouldHits = if(mappedShoulds.isNotEmpty()) mappedShoulds.reduce(Hits::or) else emptyList()
+        val shouldHits = if (mappedShoulds.isNotEmpty()) mappedShoulds.reduce(Hits::or) else emptyList()
         return when {
             must.isEmpty() && should.isEmpty() -> mustHits // results from the filter are put here
             filter.isEmpty() && should.isEmpty() -> mustHits // whatever came out of evaluating the must clauses
@@ -113,8 +67,21 @@ class BoolQuery(
                     else -> mustHits.and(shouldHits)
                 }
             }
-            else -> if(shouldHits.isEmpty()) mustHits else mustHits.and(shouldHits)
+
+            else -> if (shouldHits.isEmpty()) mustHits else mustHits.and(shouldHits)
         }
+    }
+}
+
+class TermQuery(
+    private val field: String,
+    private val text: String,
+
+    ) : Query {
+    override fun hits(documentIndex: DocumentIndex, context: QueryContext): Hits {
+        return documentIndex.getFieldIndex(field)?.let {
+            it.termMatches(text)?.map { Hit(it, 1.0) }
+        } ?: emptyList()
     }
 }
 
@@ -138,9 +105,8 @@ class MatchQuery(
                 if (termHits.isEmpty() || termHits[0].isEmpty()) {
                     return listOf()
                 } else {
-                    termHits.first().forEach {
-
-                        collectedHits[it.first] = it.second
+                    termHits.first().forEach { (docId, score) ->
+                        collectedHits[docId] = score
                     }
                     // plenty of potential to optimize this later
                     // if we have an efficient way to look up keys from sub lists, simply looking up each
@@ -172,7 +138,7 @@ class MatchQuery(
     }
 }
 
-class MatchAll: Query {
+class MatchAll : Query {
     override fun hits(documentIndex: DocumentIndex, context: QueryContext): Hits =
         documentIndex.ids().map { it to 1.0 }
 }
@@ -189,7 +155,7 @@ fun Hits.and(other: Hits): Hits {
     return left.map {
 
         val rightValue = rightMap[it.first]
-        if(rightValue == null) {
+        if (rightValue == null) {
             null
         } else {
             it.first to it.second + rightValue
@@ -205,3 +171,4 @@ fun Hits.or(other: Hits): Hits {
     }
     return collectedHits.entries.map { it.key to it.value }.filter { it.second > 0.0 }.sortedByDescending { it.second }
 }
+

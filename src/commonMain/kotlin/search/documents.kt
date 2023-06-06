@@ -1,5 +1,7 @@
 package search
 
+import kotlin.math.min
+
 class Document(val id: String,val fields: Map<String, List<String>>)
 
 class DocumentIndex(val mapping: MutableMap<String, TextFieldIndex>) {
@@ -25,7 +27,29 @@ class DocumentIndex(val mapping: MutableMap<String, TextFieldIndex>) {
 
     fun get(id: String) = documents[id]
 
-    fun search(query: Query) = query.hits(this)
+    internal fun search(query: Query, from: Int = 0, limit: Int = 200) = query.hits(this).let {
+        it.subList(from, min(limit, it.size))
+    }
 
     fun ids() = documents.keys as Set<String>
 }
+
+@DslMarker
+annotation class SearchQuery
+
+@SearchQuery
+class QueryDsl {
+    var from=0
+    var limit=200
+    var query = MatchAll()
+}
+
+fun DocumentIndex.search(block: QueryDsl.() -> Unit = {}) =
+    QueryDsl().apply(block).let { query ->
+        search(
+            query.query,
+            from = query.from,
+            limit = query.limit
+        )
+    }
+
