@@ -25,18 +25,18 @@ class TextFieldIndex(val analyzer: Analyzer = Analyzer(), val queryAnalyzer: Ana
     fun searchTerm(term: String): List<Pair<String, Double>> {
         // https://en.wikipedia.org/wiki/Tf%E2%80%93idf
 
-        return caclulateTfIdf(termMatches(term))
+        return calculateTfIdf(termMatches(term))
     }
 
     fun searchPrefix(prefix: String): List<Pair<String, Double>> {
         val terms = trie.match(prefix)
         val docIds = terms.flatMap { termMatches(it) ?: listOf() }.distinct()
-        return caclulateTfIdf(docIds)
+        return calculateTfIdf(docIds)
     }
 
     fun termMatches(term: String) = reverseMap[term]
 
-    private fun caclulateTfIdf(docIds: List<String>?): List<Pair<String, Double>> {
+    private fun calculateTfIdf(docIds: List<String>?): List<Pair<String, Double>> {
         // https://en.wikipedia.org/wiki/Tf%E2%80%93idf
 
         val termCountsPerDoc = mutableMapOf<String, Int>()
@@ -45,7 +45,7 @@ class TextFieldIndex(val analyzer: Analyzer = Analyzer(), val queryAnalyzer: Ana
             termCountsPerDoc[docId] = termCountsPerDoc.getOrElse(docId) { 0 } + 1
             matchedDocs.add(docId)
         }
-        val idf = log10((termCounts.size.toDouble() / matchedDocs.size.toDouble()))
+        val idf = if(matchedDocs.isEmpty()) 0.0 else log10((termCounts.size.toDouble() / matchedDocs.size.toDouble()))
         val unsorted = termCountsPerDoc.map { (docId, termCount) ->
             val wordCountForDoc = wordCount(docId)
 
