@@ -41,7 +41,7 @@ annotation class SearchQuery
 class QueryDsl {
     var from=0
     var limit=200
-    var query = MatchAll()
+    var query: Query = MatchAll()
 }
 
 fun DocumentIndex.search(block: QueryDsl.() -> Unit = {}) =
