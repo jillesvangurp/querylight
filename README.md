@@ -18,24 +18,19 @@ website at some point.
 
 ## Get it 
 
-This is a kotlin multiplatform distribution with packages for `-jvm` and `-js` (currently). Currently, 
-multiplatform does not work with `jitpack.io` which I use on other projects. If you are interested,
-there's an [open bug for this](https://github.com/jitpack/jitpack.io/issues/3853).
-
-So, as a workaround, I currently distribute jars via my website. To add the repository, add something 
-like this to your `build.gradle.kts` file:
+We publish jars for this library to our own maven repository. Add it like this
 
 ```kotlin
 repositories {
     mavenCentral()
-    maven { url = uri("https://www.jillesvangurp.com/maven") }
+    maven("https://maven.tryformation.com/releases")
 }
 ```
 
 and then add the dependency:
 
 ```kotlin
-implementation("com.github.jillesvangurp:ktjsearch:0.0.2")
+implementation("com.github.jillesvangurp:ktjsearch:0.1.0")
 ```
 
 For older versions of gradle you may have to specify a postfix `-jvm` or `-js`. Supposedly recent versions are smarter about figuring out multiplatform.
