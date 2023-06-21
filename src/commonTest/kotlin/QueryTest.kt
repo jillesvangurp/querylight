@@ -1,5 +1,6 @@
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldStartWith
 import search.BoolQuery
 import search.MatchAll
 import search.MatchQuery
@@ -36,4 +37,19 @@ class QueryTest {
         }
     }
 
+    @Test
+    fun shouldBoostThings() {
+        val index = quotesIndex()
+        val results = index.search {
+            query = BoolQuery(
+                should = listOf(
+                    MatchQuery(SampleObject::description.name, "to be", boost = 0.5),
+                    MatchQuery(SampleObject::description.name, "basic", boost = 20.0)
+                )
+            )
+        }.first().let { (id,_) ->
+            // partial match for to be wins here because the massive boost on basic
+            index.get(id)?.fields?.get(SampleObject::title.name)?.first() shouldStartWith "Philip K. Dick"
+        }
+    }
 }

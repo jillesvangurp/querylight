@@ -3,7 +3,16 @@
 package search
 
 interface Query {
+    val boost: Double?
     fun hits(documentIndex: DocumentIndex, context: QueryContext = QueryContext()): Hits
+}
+
+internal val Query.normalizedBoost get() = boost ?: 1.0
+
+internal fun Hits.boost(boost: Double) = if (boost != 1.0) {
+    map { it.first to it.second * boost }
+} else {
+    this
 }
 
 enum class OP {
@@ -14,7 +23,8 @@ class BoolQuery(
     private val should: List<Query> = listOf(),
     private val must: List<Query> = listOf(),
     private val filter: List<Query> = listOf(),
-    private val mustNot: List<Query> = listOf()
+    private val mustNot: List<Query> = listOf(),
+    override val boost: Double? = null
 ) : Query {
     override fun hits(documentIndex: DocumentIndex, context: QueryContext): Hits {
         if (filter.isEmpty() && should.isEmpty() && must.isEmpty()) {
@@ -69,26 +79,27 @@ class BoolQuery(
             }
 
             else -> if (shouldHits.isEmpty()) mustHits else mustHits.and(shouldHits)
-        }
+        }.boost(normalizedBoost)
     }
 }
 
 class TermQuery(
     private val field: String,
     private val text: String,
-
-    ) : Query {
+    override val boost: Double? = null,
+) : Query {
     override fun hits(documentIndex: DocumentIndex, context: QueryContext): Hits {
-        return documentIndex.getFieldIndex(field)?.let {
+        return (documentIndex.getFieldIndex(field)?.let {
             it.termMatches(text)?.map { Hit(it, 1.0) }
-        } ?: emptyList()
+        } ?: emptyList()).boost(normalizedBoost)
     }
 }
 
 class MatchQuery(
     private val field: String,
     private val text: String,
-    private val operation: OP = OP.AND
+    private val operation: OP = OP.AND,
+    override val boost: Double? = null,
 ) : Query {
     override fun hits(documentIndex: DocumentIndex, context: QueryContext): Hits {
         val fieldIndex = documentIndex.getFieldIndex(field)
@@ -103,7 +114,7 @@ class MatchQuery(
                 }.sortedBy { it.size }
                 // quick check to see if we can return right away (if one of the terms did not match, we have no hits)
                 if (termHits.isEmpty() || termHits[0].isEmpty()) {
-                    return listOf()
+                    listOf<Hit>()
                 } else {
                     termHits.first().forEach { (docId, score) ->
                         collectedHits[docId] = score
@@ -131,16 +142,18 @@ class MatchQuery(
                     }
                 }
             }
-            return collectedHits.map { it.key to it.value }.sortedByDescending { it.second }
+            return collectedHits.map { it.key to it.value }.sortedByDescending { it.second }.boost(normalizedBoost)
         } else {
             return emptyList()
         }
     }
 }
 
-class MatchAll : Query {
+class MatchAll(
+    override val boost: Double? = null,
+) : Query {
     override fun hits(documentIndex: DocumentIndex, context: QueryContext): Hits =
-        documentIndex.ids().map { it to 1.0 }
+        documentIndex.ids().map { it to 1.0 }.boost(normalizedBoost)
 }
 
 fun Hits.ids() = this.map { it.first }
@@ -152,7 +165,7 @@ fun Hits.and(other: Hits): Hits {
         other to this
     }
     val rightMap = right.toMap()
-    return left.map {
+    return left.mapNotNull {
 
         val rightValue = rightMap[it.first]
         if (rightValue == null) {
@@ -160,7 +173,7 @@ fun Hits.and(other: Hits): Hits {
         } else {
             it.first to it.second + rightValue
         }
-    }.filterNotNull().filter { it.second > 0.0 }.sortedByDescending { it.second }
+    }.filter { it.second > 0.0 }.sortedByDescending { it.second }
 }
 
 fun Hits.or(other: Hits): Hits {
