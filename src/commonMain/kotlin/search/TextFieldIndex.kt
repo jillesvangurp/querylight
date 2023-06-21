@@ -76,6 +76,5 @@ class TextFieldIndex(val analyzer: Analyzer = Analyzer(), val queryAnalyzer: Ana
     }
 
 
-    private fun wordCount(docId: String) =
-        (termCounts[docId] ?: throw IllegalStateException("word count not found for $docId"))
+    private fun wordCount(docId: String) = termCounts[docId] ?: 0
 }
