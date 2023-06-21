@@ -52,4 +52,15 @@ class QueryTest {
             index.get(id)?.fields?.get(SampleObject::title.name)?.first() shouldStartWith "Philip K. Dick"
         }
     }
+
+    @Test
+    fun shouldIncludePrefixes() {
+        val index = quotesIndex()
+        index.search {
+            query = MatchQuery(SampleObject::description.name, "ba")
+        }.size shouldBe 0
+        index.search {
+            query = MatchQuery(SampleObject::description.name, "ba", prefixMatch = true)
+        }.size shouldBeGreaterThan 0
+    }
 }

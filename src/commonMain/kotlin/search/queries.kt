@@ -99,6 +99,7 @@ class MatchQuery(
     private val field: String,
     private val text: String,
     private val operation: OP = OP.AND,
+    private val prefixMatch: Boolean = false,
     override val boost: Double? = null,
 ) : Query {
     override fun hits(documentIndex: DocumentIndex, context: QueryContext): Hits {
@@ -110,7 +111,7 @@ class MatchQuery(
             if (operation == OP.AND) {
                 // start with the smallest list
                 val termHits = searchTerms.map {
-                    fieldIndex.searchTerm(it)
+                    fieldIndex.searchTerm(it,prefixMatch)
                 }.sortedBy { it.size }
                 // quick check to see if we can return right away (if one of the terms did not match, we have no hits)
                 if (termHits.isEmpty() || termHits[0].isEmpty()) {
@@ -132,7 +133,7 @@ class MatchQuery(
                     }
                 }
             } else {
-                val termHits = searchTerms.map { fieldIndex.searchTerm(it) }
+                val termHits = searchTerms.map { fieldIndex.searchTerm(it,prefixMatch) }
                 termHits.first().forEach {
                     collectedHits[it.first] = it.second
                 }

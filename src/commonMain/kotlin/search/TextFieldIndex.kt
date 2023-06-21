@@ -22,10 +22,22 @@ class TextFieldIndex(val analyzer: Analyzer = Analyzer(), val queryAnalyzer: Ana
     /**
      * Returns a list of docId to tf/idf score
      */
-    fun searchTerm(term: String): List<Pair<String, Double>> {
+    fun searchTerm(term: String, allowPrefixMatch: Boolean = false): List<Pair<String, Double>> {
         // https://en.wikipedia.org/wiki/Tf%E2%80%93idf
 
-        return calculateTfIdf(termMatches(term))
+        val matches = termMatches(term) ?: if(allowPrefixMatch) trie.match(term).flatMap { t -> termMatches(t) ?: listOf() }
+            .distinct().takeIf { it.isNotEmpty() } else null
+        return when {
+            matches != null -> {
+                calculateTfIdf(matches)
+            }
+            allowPrefixMatch -> {
+                calculateTfIdf(trie.match(term)).boost(0.1)
+            }
+            else -> {
+                emptyList()
+            }
+        }
     }
 
     fun searchPrefix(prefix: String): List<Pair<String, Double>> {
