@@ -31,13 +31,14 @@ interface TokenFilter {
 class NgramTokenFilter(val ngramSize: Int) : TokenFilter {
     override fun filter(tokens: List<String>): List<String> {
         val joined = tokens.joinToString("")
-        return if (joined.length < ngramSize) {
+        return if(joined.isBlank()) listOf()
+        else if (joined.length < ngramSize) {
             listOf(joined)
         } else {
             (0..joined.length - ngramSize).map { i ->
                 joined.subSequence(i, i+ngramSize).toString()
             }
-        }
+        }.distinct()
     }
 }
 
@@ -54,8 +55,7 @@ class EdgeNgramsTokenFilter(val minLength:Int, val maxLength:Int): TokenFilter {
                     )
                 }
             }
-        }
-
+        }.distinct()
     }
 
 }
