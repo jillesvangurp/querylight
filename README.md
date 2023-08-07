@@ -1,4 +1,4 @@
-# Ktjsearch
+# querylight
 
 This is my attempt at building a small kotlin library for implementing offline search in e.g. a website or inside a
 mobile phone app (android, IOS, etc.).
@@ -30,7 +30,7 @@ repositories {
 and then add the dependency:
 
 ```kotlin
-implementation("com.github.jillesvangurp:ktjsearch:0.1.3")
+implementation("com.github.jillesvangurp:querylight:0.1.5")
 ```
 
 For older versions of gradle you may have to specify a postfix `-jvm` or `-js`. Supposedly recent versions are smarter about figuring out multiplatform.

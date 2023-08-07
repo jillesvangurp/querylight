@@ -39,19 +39,19 @@ fun testIndex(): DocumentIndex {
             description = """A famous play by Shakespeare that contains a nice edge case for search engines "To Be, Or Not To Be" consisting of stop words."""
         ),
         SampleObject(
-            id="ktjsearch",
-            title = "Ktjsearch",
-            description = "Ktjsearch is an alternative to both solr and elasticsearch that does not use lucene."
+            id="querylight",
+            title = "querylight",
+            description = "querylight is an alternative to both solr and elasticsearch that does not use lucene."
         ),
         SampleObject(
             id="solr",
             title = "Apache Solr & Lucene",
-            description = "An alternative to Elasticsearch that lives in the same OSS project as Apache Lucene, which is used by both but not by ktjsearch."
+            description = "An alternative to Elasticsearch that lives in the same OSS project as Apache Lucene, which is used by both but not by querylight."
         ),
         SampleObject(
             id="es",
             title = "Elasticsearch, you know for search",
-            description = "Elasticsearch is something you should consider using instead of Ktjsearch. Unless you need offline search of course."
+            description = "Elasticsearch is something you should consider using instead of querylight. Unless you need offline search of course."
         )
     ).map(SampleObject::toDoc).forEach(documentIndex::index)
     return documentIndex

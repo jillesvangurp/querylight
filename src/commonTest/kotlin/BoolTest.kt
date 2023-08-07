@@ -21,7 +21,7 @@ class BoolTest {
         val index = testIndex()
 
         val results = index.search(BoolQuery(filter = listOf(
-            MatchQuery("title", "ktjsearch")
+            MatchQuery("title", "querylight")
         )))
 
         results.forEach { println(it) }
@@ -42,7 +42,7 @@ class BoolTest {
             size shouldBe 3
         }
         index.search(BoolQuery(
-            filter = listOf(MatchQuery("title","ktjsearch")),
+            filter = listOf(MatchQuery("title","querylight")),
             must = listOf(esClause)
         )).apply {
             size shouldBe 1
@@ -59,15 +59,15 @@ class BoolTest {
     @Test
     fun shouldRank() {
         val index = testIndex()
-        val q=BoolQuery(should = listOf(MatchQuery("title","ktjsearch"), MatchQuery("description","ktjsearch")))
+        val q=BoolQuery(should = listOf(MatchQuery("title","querylight"), MatchQuery("description","querylight")))
         index.search(q).apply {
             forEach {
                 println("hit: $it")
             }
-            this.ids() shouldContainAll listOf("ktjsearch", "es", "solr")
-            // ktjsearch ranks higher because it appears in the title and description
-            this.shouldAppearBefore("ktjsearch","es")
-            this.shouldAppearBefore("ktjsearch","solr")
+            this.ids() shouldContainAll listOf("querylight", "es", "solr")
+            // querylight ranks higher because it appears in the title and description
+            this.shouldAppearBefore("querylight","es")
+            this.shouldAppearBefore("querylight","solr")
         }
     }
 
