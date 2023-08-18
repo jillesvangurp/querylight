@@ -14,6 +14,10 @@ kotlin {
     js(IR) {
         nodejs()
     }
+    macosX64("native") { // on macOS
+        // linuxX64("native") // on Linux
+        // mingwX64("native") // on Windows
+    }
     sourceSets {
         val commonMain by getting {
             dependencies {
