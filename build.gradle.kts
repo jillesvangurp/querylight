@@ -1,5 +1,8 @@
 @file:Suppress("UNUSED_VARIABLE")
 
+import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalWasmDsl
+
+
 plugins {
     kotlin("multiplatform")
     id("maven-publish")
@@ -14,17 +17,33 @@ kotlin {
     js(IR) {
         nodejs()
     }
-    macosX64("native") { // on macOS
-        // linuxX64("native") // on Linux
-        // mingwX64("native") // on Windows
+    macosX64 { // on macOS
     }
+    linuxX64 {
+
+    }
+    mingwX64 {
+
+    }
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        browser()
+        nodejs()
+        d8()
+    }
+// no kotest support yet ..
+//    @OptIn(ExperimentalWasmDsl::class)
+//    wasmWasi() {
+//        nodejs()
+//    }
+
     sourceSets {
-        val commonMain by getting {
+        commonMain {
             dependencies {
                 implementation(kotlin("stdlib-common"))
             }
         }
-        val commonTest by getting {
+        commonTest {
             dependencies {
                 implementation(kotlin("test-common"))
                 implementation(kotlin("test-annotations-common"))
@@ -32,18 +51,40 @@ kotlin {
             }
         }
 
-        val jvmTest by getting {
+        jvmTest {
             dependencies {
                 implementation(kotlin("test-junit"))
 
             }
         }
-
-        val jsTest by getting {
+        jsTest {
             dependencies {
                 implementation(kotlin("test-js"))
             }
         }
+        nativeTest {
+            dependencies {
+//                implementation(kotlin("test-native"))
+            }
+
+        }
+        wasmJsTest {
+            dependencies {
+                implementation(kotlin("test-wasm-js"))
+            }
+        }
+
+
+        all {
+            languageSettings {
+                optIn("kotlin.RequiresOptIn")
+                optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
+                languageVersion = "1.9"
+                apiVersion = "1.9"
+            }
+
+        }
+
     }
 }
 

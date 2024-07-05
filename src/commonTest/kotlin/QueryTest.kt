@@ -40,7 +40,7 @@ class QueryTest {
     @Test
     fun shouldBoostThings() {
         val index = quotesIndex()
-        val results = index.search {
+        index.search {
             query = BoolQuery(
                 should = listOf(
                     MatchQuery(SampleObject::description.name, "to be", boost = 0.5),
