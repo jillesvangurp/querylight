@@ -24,7 +24,8 @@ fun testIndex(): DocumentIndex {
     val documentIndex = DocumentIndex(
         mutableMapOf(
             "title" to TextFieldIndex(),
-            "description" to TextFieldIndex()
+            "description" to TextFieldIndex(),
+            "tags" to TextFieldIndex(),
         )
     )
 
