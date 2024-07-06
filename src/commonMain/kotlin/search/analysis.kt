@@ -60,6 +60,12 @@ class EdgeNgramsTokenFilter(val minLength:Int, val maxLength:Int): TokenFilter {
 
 }
 
+class ElisionTextFilter : TextFilter {
+    private val elisionRE = """['’]""".toRegex()
+    override fun filter(text: String): String {
+        return elisionRE.replace(text, "")
+    }
+}
 
 class InterpunctionTextFilter : TextFilter {
     private val interpunctionRE = """[\\\]\['"!,.@#$%^&*()_+-={}|><`~±§?]""".toRegex()
@@ -69,7 +75,7 @@ class InterpunctionTextFilter : TextFilter {
 }
 
 class Analyzer(
-    private val textFilters: List<TextFilter> = listOf(LowerCaseTextFilter(), InterpunctionTextFilter()),
+    private val textFilters: List<TextFilter> = listOf(LowerCaseTextFilter(), ElisionTextFilter(), InterpunctionTextFilter()),
     private val tokenizer: Tokenizer = SplittingTokenizer(),
     private val tokenFilter: List<TokenFilter> = emptyList()
 ) {
