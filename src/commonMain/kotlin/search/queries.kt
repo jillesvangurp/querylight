@@ -90,7 +90,7 @@ class TermQuery(
 ) : Query {
     override fun hits(documentIndex: DocumentIndex, context: QueryContext): Hits {
         return (documentIndex.getFieldIndex(field)?.let {
-            it.termMatches(text)?.map { Hit(it, 1.0) }
+            it.termMatches(text)?.map { Hit(it.first, 1.0) }
         } ?: emptyList()).boost(normalizedBoost)
     }
 }
@@ -148,6 +148,25 @@ class MatchQuery(
             return emptyList()
         }
     }
+}
+
+class MatchPhrase(
+    private val field: String,
+    private val text: String,
+    private val slop: Int=0,
+    override val boost: Double? = null,
+): Query {
+    override fun hits(documentIndex: DocumentIndex, context: QueryContext): Hits {
+        val fieldIndex = documentIndex.getFieldIndex(field)
+        if (fieldIndex != null) {
+            val searchTerms = fieldIndex.queryAnalyzer.analyze(text)
+
+            return fieldIndex.searchPhrase(searchTerms,slop)
+        } else {
+            return  emptyList()
+        }
+    }
+
 }
 
 class MatchAll(

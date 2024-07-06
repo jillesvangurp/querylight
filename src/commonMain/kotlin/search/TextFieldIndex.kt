@@ -2,19 +2,26 @@ package search
 
 import kotlin.math.log10
 
-typealias Hit = Pair<String,Double>
+typealias Hit = Pair<String, Double>
 typealias Hits = List<Hit>
 
 class TextFieldIndex(val analyzer: Analyzer = Analyzer(), val queryAnalyzer: Analyzer = Analyzer()) {
     // docid -> word count so we can calculate tf
-    private val termCounts = mutableMapOf<String,Int>()
-    private val reverseMap = mutableMapOf<String,MutableList<String>>()
+    private val termCounts = mutableMapOf<String, Int>()
+    private val reverseMap = mutableMapOf<String, MutableList<Pair<String, Int>>>()
     private val trie = SimpleStringTrie()
 
     fun add(docId: String, text: String) {
-        analyzer.analyze(text).forEach { term ->
-            termCounts[docId] = termCounts.getOrElse(docId) { 0 } + 1
-            (reverseMap.getOrPut(term) { mutableListOf() }).add(docId)
+        val tokens = analyzer.analyze(text)
+        val termPositions = mutableMapOf<String, MutableList<Int>>()
+
+        tokens.forEachIndexed { index, term ->
+            termPositions.getOrPut(term) { mutableListOf() }.add(index)
+        }
+
+        termPositions.forEach { (term, positions) ->
+            termCounts[docId] = termCounts.getOrElse(docId) { 0 } + positions.size
+            reverseMap.getOrPut(term) { mutableListOf() }.addAll(positions.map { Pair(docId, it) })
             trie.add(term)
         }
     }
@@ -22,42 +29,60 @@ class TextFieldIndex(val analyzer: Analyzer = Analyzer(), val queryAnalyzer: Ana
     /**
      * Returns a list of docId to tf/idf score
      */
-    fun searchTerm(term: String, allowPrefixMatch: Boolean = false): List<Pair<String, Double>> {
-        // https://en.wikipedia.org/wiki/Tf%E2%80%93idf
+    fun searchTerm(term: String, allowPrefixMatch: Boolean = false): List<Hit> {
+        val matches = termMatches(term) ?: if (allowPrefixMatch) {
+            trie.match(term).flatMap { t -> termMatches(t) ?: listOf() }.distinct().takeIf { it.isNotEmpty() }
+        } else null
 
-        val matches = termMatches(term) ?: if(allowPrefixMatch) trie.match(term).flatMap { t -> termMatches(t) ?: listOf() }
-            .distinct().takeIf { it.isNotEmpty() } else null
         return when {
-            matches != null -> {
-                calculateTfIdf(matches)
-            }
-            allowPrefixMatch -> {
-                calculateTfIdf(trie.match(term)).boost(0.1)
-            }
-            else -> {
-                emptyList()
-            }
+            matches != null -> calculateTfIdf(matches.map { it.first })
+            allowPrefixMatch -> calculateTfIdf(trie.match(term)).boost(0.1)
+            else -> emptyList()
         }
     }
 
-    fun searchPrefix(prefix: String): List<Pair<String, Double>> {
+    fun searchPhrase(terms: List<String>, slop: Int = 0): List<Hit> {
+        if (terms.isEmpty()) return emptyList()
+
+        val initialMatches = reverseMap[terms[0]]?.toMutableList() ?: return emptyList()
+        val phraseMatches = mutableListOf<String>()
+
+        initialMatches.forEach { (docId, startPos) ->
+            var match = true
+            for (i in 1 until terms.size) {
+                val term = terms[i]
+                val termPositions = reverseMap[term]?.filter { it.first == docId }?.map { it.second } ?: listOf()
+                if (!termPositions.any { pos -> pos == startPos + i || (slop > 0 && pos in (startPos + i - slop)..(startPos + i + slop)) }) {
+                    match = false
+                    break
+                }
+            }
+            if (match) {
+                phraseMatches.add(docId)
+            }
+        }
+
+        return calculateTfIdf(phraseMatches)
+    }
+
+    fun searchPrefix(prefix: String): List<Hit> {
         val terms = trie.match(prefix)
-        val docIds = terms.flatMap { termMatches(it) ?: listOf() }.distinct()
+        val docIds = terms.flatMap { termMatches(it)?.map { it.first } ?: listOf() }.distinct()
         return calculateTfIdf(docIds)
     }
 
-    fun termMatches(term: String) = reverseMap[term]
+    fun termMatches(term: String): List<Pair<String, Int>>? {
+        return reverseMap[term]
+    }
 
     private fun calculateTfIdf(docIds: List<String>?): List<Pair<String, Double>> {
-        // https://en.wikipedia.org/wiki/Tf%E2%80%93idf
-
         val termCountsPerDoc = mutableMapOf<String, Int>()
         val matchedDocs = mutableSetOf<String>()
         docIds?.forEach { docId ->
             termCountsPerDoc[docId] = termCountsPerDoc.getOrElse(docId) { 0 } + 1
             matchedDocs.add(docId)
         }
-        val idf = if(matchedDocs.isEmpty()) 0.0 else log10((termCounts.size.toDouble() / matchedDocs.size.toDouble()))
+        val idf = if (matchedDocs.isEmpty()) 0.0 else log10((termCounts.size.toDouble() / matchedDocs.size.toDouble()))
         val unsorted = termCountsPerDoc.map { (docId, termCount) ->
             val wordCountForDoc = wordCount(docId)
 
@@ -75,7 +100,6 @@ class TextFieldIndex(val analyzer: Analyzer = Analyzer(), val queryAnalyzer: Ana
         return unsorted.sortedByDescending { (_, tfIdf) -> tfIdf }
     }
 
-
     private fun wordCount(docId: String) = termCounts[docId] ?: 0
 
     /**
@@ -89,7 +113,7 @@ class TextFieldIndex(val analyzer: Analyzer = Analyzer(), val queryAnalyzer: Ana
         // Calculate term frequencies in the subset
         subsetDocIds.forEach { docId ->
             reverseMap.forEach { (term, docIds) ->
-                if (docIds.contains(docId)) {
+                if (docIds.any { it.first == docId }) {
                     subsetTermCounts[term] = subsetTermCounts.getOrElse(term) { 0 } + 1
                     subsetTermDocs.getOrPut(term) { mutableSetOf() }.add(docId)
                 }
@@ -141,7 +165,7 @@ class TextFieldIndex(val analyzer: Analyzer = Analyzer(), val queryAnalyzer: Ana
             // Calculate term frequencies for the specified subset
             subsetDocIds.forEach { docId ->
                 reverseMap.forEach { (term, docIds) ->
-                    if (docIds.contains(docId)) {
+                    if (docIds.any { it.first == docId }) {
                         termCounts[term] = termCounts.getOrElse(term) { 0 } + 1
                     }
                 }

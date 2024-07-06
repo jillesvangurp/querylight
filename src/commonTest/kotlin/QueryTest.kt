@@ -6,6 +6,7 @@ import search.MatchAll
 import search.MatchQuery
 import search.search
 import kotlin.test.Test
+import search.MatchPhrase
 
 class QueryTest {
 
@@ -35,6 +36,16 @@ class QueryTest {
         results.forEach { (id,score) ->
             println(id + " " + score + " " + index.documents[id]?.let { "${it.fields["description"]} (${it.fields["title"]})" })
         }
+    }
+
+    @Test
+    fun shouldDoPhraseSearch() {
+        val index = quotesIndex()
+        val results= index.search {
+            query = MatchPhrase("description", "to be or not to be")
+        }
+        // should find the shakespeare quote and nothing else
+        results.size shouldBe 1
     }
 
     @Test
