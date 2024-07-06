@@ -16,6 +16,11 @@ interface Tokenizer {
     fun tokenize(text: String): List<String>
 }
 
+class KeywordTokenizer: Tokenizer {
+    override fun tokenize(text: String): List<String> {
+        return listOf(text)
+    }
+}
 
 class SplittingTokenizer : Tokenizer {
     val re = Regex("""\s+""", RegexOption.MULTILINE)
