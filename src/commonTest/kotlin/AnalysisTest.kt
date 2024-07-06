@@ -44,7 +44,7 @@ class AnalysisTest {
 
         val edgeNgramsTokenFilter = EdgeNgramsTokenFilter(2, 4)
         edgeNgramsTokenFilter.filter(tokens) shouldBe listOf(
-            "ma", "am", "mad", "dam", "mada", "adam", "i", "m", "ad", "ada"
+            "ma", "am", "mad", "dam", "mada", "adam", "im", "ad", "ada"
         )
         edgeNgramsTokenFilter.filter(listOf()) shouldBe listOf()
         edgeNgramsTokenFilter.filter(listOf("1")) shouldBe listOf("1")
