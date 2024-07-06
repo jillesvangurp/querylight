@@ -77,4 +77,26 @@ class TextFieldIndex(val analyzer: Analyzer = Analyzer(), val queryAnalyzer: Ana
 
 
     private fun wordCount(docId: String) = termCounts[docId] ?: 0
+
+    /**
+     * Returns the top N significant terms as a Map<String, Pair<Double, Int>>
+     * where the Double is the aggregated TF-IDF score and the Int is the document count
+     */
+    fun getTopSignificantTerms(n: Int): Map<String, Pair<Double, Int>> {
+        val termScores = mutableMapOf<String, Pair<Double, Int>>()
+
+        // Calculate TF-IDF for each term and count documents
+        reverseMap.forEach { (term, docIds) ->
+            val tfIdfList = calculateTfIdf(docIds)
+            val totalTfIdf = tfIdfList.sumOf { it.second }
+            val docCount = docIds.distinct().size
+            termScores[term] = Pair(totalTfIdf, docCount)
+        }
+
+        // Sort terms by TF-IDF score and take the top N
+        return termScores.entries
+            .sortedByDescending { it.value.first }
+            .take(n)
+            .associate { it.key to it.value }
+    }
 }
