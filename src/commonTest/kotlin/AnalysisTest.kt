@@ -4,6 +4,7 @@ import search.Analyzer
 import search.EdgeNgramsTokenFilter
 import search.NgramTokenFilter
 import kotlin.test.Test
+import search.InterpunctionTextFilter
 
 class AnalysisTest {
     @Test
@@ -12,7 +13,7 @@ class AnalysisTest {
 
         standardAnalyzer.apply {
             analyze("").size shouldBe 0
-            analyze("""!@#$%^&*()_+=-{}][\\|'\"';:/?.>,<`~§±""").size shouldBe 0
+            analyze("""!@#$%^&*()_+=-{}][\\|'\"';:/?.>,<`~§±""") shouldBe emptyList()
             analyze("\n\t ").size shouldBe 0
             analyze(",.foo -bar_\n\tfoo.") shouldContainInOrder listOf("foo", "bar", "foo")
             analyze("foo,bar,foo") shouldContainInOrder listOf("foo", "bar", "foo")
@@ -52,5 +53,13 @@ class AnalysisTest {
         edgeNgramsTokenFilter.filter(listOf("123")) shouldBe listOf("12", "23", "123")
         edgeNgramsTokenFilter.filter(listOf("1234")) shouldBe listOf("12", "34", "123", "234", "1234")
         edgeNgramsTokenFilter.filter(listOf("12345")) shouldBe listOf("12", "45", "123", "345", "1234", "2345")
+    }
+
+    @Test
+    fun shouldNotFilterOutNumbers() {
+        val test = "100"
+        // we had a bug where - was not escaped
+        val filter = InterpunctionTextFilter()
+        filter.filter(test) shouldBe "100"
     }
 }

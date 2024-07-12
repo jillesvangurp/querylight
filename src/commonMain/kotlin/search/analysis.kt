@@ -73,21 +73,24 @@ class ElisionTextFilter : TextFilter {
 }
 
 class InterpunctionTextFilter : TextFilter {
-    private val interpunctionRE = """[\\\]\['"!,.@#$%^&*()_+-={}|><`~±§?]""".toRegex()
+    private val interpunctionRE = """[\\\]\['"!,.@#$%^&*()_+\-={}|><`~±§?;:/]""".toRegex()
     override fun filter(text: String): String {
-        return interpunctionRE.replace(text, " ")
+        return interpunctionRE.replace(text, " ").trim()
     }
 }
 
 class Analyzer(
-    private val textFilters: List<TextFilter> = listOf(LowerCaseTextFilter(), ElisionTextFilter(), InterpunctionTextFilter()),
+    private val textFilters: List<TextFilter> = listOf(
+        LowerCaseTextFilter(),
+        ElisionTextFilter(),
+        InterpunctionTextFilter()
+    ),
     private val tokenizer: Tokenizer = SplittingTokenizer(),
     private val tokenFilter: List<TokenFilter> = emptyList()
 ) {
     fun analyze(text: String): List<String> {
         var filtered = text
         textFilters.forEach { filtered = it.filter(filtered) }
-
         var tokens = tokenizer.tokenize(filtered)
         tokenFilter.forEach {
             tokens = it.filter(tokens)
