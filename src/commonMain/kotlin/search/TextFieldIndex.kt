@@ -75,6 +75,45 @@ class TextFieldIndex(val analyzer: Analyzer = Analyzer(), val queryAnalyzer: Ana
         return reverseMap[term]
     }
 
+    fun filterTermsByRange(
+        lt: String? = null,
+        lte: String? = null,
+        gt: String? = null,
+        gte: String? = null,
+
+        ): List<Hit> {
+        val lower = gt ?: gte
+        val lowerInclusive = gte != null
+        val upper = lt ?: lte
+        val upperInclusive = lte != null
+
+        return reverseMap.keys.asSequence().filter { term ->
+            val lowerClause = if (lower != null) {
+                if (lowerInclusive) {
+                    term >= lower
+                } else {
+                    term > lower
+                }
+            } else {
+                true
+            }
+            val upperClause = if (upper != null) {
+                if (upperInclusive) {
+                    term <= upper
+                } else {
+                    term < upper
+                }
+            } else {
+                true
+            }
+            lowerClause && upperClause
+        }.flatMap {
+            reverseMap[it].orEmpty()
+        }.map {
+            it.first
+        }.distinct().map { it to 1.0 }.toList()
+    }
+
     private fun calculateTfIdf(docIds: List<String>?): List<Pair<String, Double>> {
         val termCountsPerDoc = mutableMapOf<String, Int>()
         val matchedDocs = mutableSetOf<String>()

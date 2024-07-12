@@ -9,13 +9,18 @@ class DocumentIndex(val mapping: MutableMap<String, TextFieldIndex>) {
     fun index(document: Document) {
         documents.put(document.id,document)
         document.fields.forEach { (field,texts) ->
-            val fieldIndex: TextFieldIndex? = mapping[field]
-            if(fieldIndex == null) {
-                mapping[field] = TextFieldIndex()
+            // create indices on the fly to emulate dynamic mapping
+            val fieldIndex = mapping[field].let {
+                if(it == null) {
+                    val newIndex = TextFieldIndex()
+                    mapping[field] = newIndex
+                    newIndex
+                } else {
+                    it
+                }
             }
-            fieldIndex as TextFieldIndex
-            texts.forEach {
 
+            texts.forEach {
                 fieldIndex.add(document.id, it)
             }
         }

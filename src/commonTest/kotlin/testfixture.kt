@@ -31,7 +31,6 @@ fun testIndex(): DocumentIndex {
 
     listOf(
         SampleObject(
-
             id = "lorem",
             title = "Lorem ipsum",
             description = """
@@ -141,7 +140,7 @@ fun quotesIndex(): DocumentIndex {
         SampleObject(
             "Orson Scott Card, Ender's Game",
             "In the moment when I truly understand my enemy, understand him well enough to defeat him, then in that very moment, I also love him.",
-            tags = listOf("book","scienc fiction")
+            tags = listOf("book","science fiction")
         ),
     ).map(SampleObject::toDoc).forEach(documentIndex::index)
     return documentIndex

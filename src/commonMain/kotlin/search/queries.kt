@@ -95,6 +95,26 @@ class TermQuery(
     }
 }
 
+class RangeQuery(
+    private val field: String,
+    private val lt: String? = null,
+    private val lte: String? = null,
+    private val gt: String? = null,
+    private val gte: String? = null,
+    override val boost: Double? = null,
+) : Query {
+    override fun hits(documentIndex: DocumentIndex, context: QueryContext): Hits {
+        return (documentIndex.getFieldIndex(field)?.let {fieldIndex ->
+            fieldIndex.filterTermsByRange(
+                gt=gt,
+                gte=gte,
+                lt=lt,
+                lte=lte,
+            )
+        } ?: emptyList()).boost(normalizedBoost)
+    }
+}
+
 class MatchQuery(
     private val field: String,
     private val text: String,
