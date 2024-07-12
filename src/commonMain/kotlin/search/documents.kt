@@ -21,3 +21,4 @@ fun DocumentIndex.search(block: QueryDsl.() -> Unit = {}) =
         )
     }
 
+fun DocumentIndex.count( block: QueryDsl.() -> Unit = {}) = search(block).size
