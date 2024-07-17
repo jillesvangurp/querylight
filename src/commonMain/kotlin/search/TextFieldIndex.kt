@@ -1,15 +1,40 @@
 package search
 
 import kotlin.math.log10
+import kotlinx.serialization.Serializable
 
 typealias Hit = Pair<String, Double>
 typealias Hits = List<Hit>
 
-class TextFieldIndex(val analyzer: Analyzer = Analyzer(), val queryAnalyzer: Analyzer = Analyzer()) {
+@Serializable
+data class TermPos(val id: String, val position:Int)
+
+@Serializable
+data class IndexState(
+    val termCounts: Map<String,Int>,
+    val reverseMap: Map<String,List<TermPos>>,
+    val trie: TrieNode,
+)
+
+class TextFieldIndex(
+    val analyzer: Analyzer = Analyzer(),
+    val queryAnalyzer: Analyzer = Analyzer(),
+    private val termCounts: MutableMap<String, Int> = mutableMapOf(),
+    private val reverseMap: MutableMap<String, MutableList<TermPos>> = mutableMapOf(),
+    private val trie: SimpleStringTrie = SimpleStringTrie()
+) {
+    val indexState get() = IndexState(termCounts, reverseMap, trie.root)
+
+    fun loadState(indexState: IndexState): TextFieldIndex {
+        return TextFieldIndex(
+            analyzer = analyzer, queryAnalyzer = queryAnalyzer,
+            termCounts = indexState.termCounts.toMutableMap(),
+            reverseMap = indexState.reverseMap.map { (k,v)-> k to v.toMutableList() }.toMap().toMutableMap(),
+            trie = SimpleStringTrie(indexState.trie)
+        )
+    }
+
     // docid -> word count so we can calculate tf
-    private val termCounts = mutableMapOf<String, Int>()
-    private val reverseMap = mutableMapOf<String, MutableList<Pair<String, Int>>>()
-    private val trie = SimpleStringTrie()
 
     fun add(docId: String, text: String) {
         val tokens = analyzer.analyze(text)
@@ -21,7 +46,7 @@ class TextFieldIndex(val analyzer: Analyzer = Analyzer(), val queryAnalyzer: Ana
 
         termPositions.forEach { (term, positions) ->
             termCounts[docId] = termCounts.getOrElse(docId) { 0 } + positions.size
-            reverseMap.getOrPut(term) { mutableListOf() }.addAll(positions.map { Pair(docId, it) })
+            reverseMap.getOrPut(term) { mutableListOf() }.addAll(positions.map { TermPos(docId, it) })
             trie.add(term)
         }
     }
@@ -34,11 +59,7 @@ class TextFieldIndex(val analyzer: Analyzer = Analyzer(), val queryAnalyzer: Ana
             trie.match(term).flatMap { t -> termMatches(t) ?: listOf() }.distinct().takeIf { it.isNotEmpty() }
         } else null
 
-        return when {
-            matches != null -> calculateTfIdf(matches.map { it.first })
-            allowPrefixMatch -> calculateTfIdf(trie.match(term)).boost(0.1)
-            else -> emptyList()
-        }
+        return matches?.let { calculateTfIdf(it.map { it.id }) } ?: emptyList()
     }
 
     fun searchPhrase(terms: List<String>, slop: Int = 0): List<Hit> {
@@ -51,7 +72,7 @@ class TextFieldIndex(val analyzer: Analyzer = Analyzer(), val queryAnalyzer: Ana
             var match = true
             for (i in 1 until terms.size) {
                 val term = terms[i]
-                val termPositions = reverseMap[term]?.filter { it.first == docId }?.map { it.second } ?: listOf()
+                val termPositions = reverseMap[term]?.filter { it.id == docId }?.map { it.position } ?: listOf()
                 if (!termPositions.any { pos -> pos == startPos + i || (slop > 0 && pos in (startPos + i - slop)..(startPos + i + slop)) }) {
                     match = false
                     break
@@ -67,11 +88,11 @@ class TextFieldIndex(val analyzer: Analyzer = Analyzer(), val queryAnalyzer: Ana
 
     fun searchPrefix(prefix: String): List<Hit> {
         val terms = trie.match(prefix)
-        val docIds = terms.flatMap { termMatches(it)?.map { it.first } ?: listOf() }.distinct()
+        val docIds = terms.flatMap { termMatches(it)?.map { it.id } ?: listOf() }.distinct()
         return calculateTfIdf(docIds)
     }
 
-    fun termMatches(term: String): List<Pair<String, Int>>? {
+    fun termMatches(term: String): List<TermPos>? {
         return reverseMap[term]
     }
 
@@ -110,7 +131,7 @@ class TextFieldIndex(val analyzer: Analyzer = Analyzer(), val queryAnalyzer: Ana
         }.flatMap {
             reverseMap[it].orEmpty()
         }.map {
-            it.first
+            it.id
         }.distinct().map { it to 1.0 }.toList()
     }
 
@@ -152,7 +173,7 @@ class TextFieldIndex(val analyzer: Analyzer = Analyzer(), val queryAnalyzer: Ana
         // Calculate term frequencies in the subset
         subsetDocIds.forEach { docId ->
             reverseMap.forEach { (term, docIds) ->
-                if (docIds.any { it.first == docId }) {
+                if (docIds.any { it.id == docId }) {
                     subsetTermCounts[term] = subsetTermCounts.getOrElse(term) { 0 } + 1
                     subsetTermDocs.getOrPut(term) { mutableSetOf() }.add(docId)
                 }
@@ -204,7 +225,7 @@ class TextFieldIndex(val analyzer: Analyzer = Analyzer(), val queryAnalyzer: Ana
             // Calculate term frequencies for the specified subset
             subsetDocIds.forEach { docId ->
                 reverseMap.forEach { (term, docIds) ->
-                    if (docIds.any { it.first == docId }) {
+                    if (docIds.any { it.id == docId }) {
                         termCounts[term] = termCounts.getOrElse(term) { 0 } + 1
                     }
                 }

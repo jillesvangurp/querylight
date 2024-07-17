@@ -1,11 +1,34 @@
 package search
 
 import kotlin.math.min
+import kotlinx.serialization.Serializable
 
-class DocumentIndex(val mapping: MutableMap<String, TextFieldIndex>) {
+@Serializable
+data class DocumentIndexState(val documents: Map<String, Document>, val fieldState: Map<String, IndexState>)
+
+class DocumentIndex(
+    val mapping: MutableMap<String, TextFieldIndex>,
+    val documents: MutableMap<String, Document> = mutableMapOf(),
+) {
     // TODO document removal is tricky with current TextIndex implementation
 
-    val documents = mutableMapOf<String, Document>()
+
+    val indexState get() = DocumentIndexState(
+        documents = documents,
+        fieldState = mapping.map { (k, v) ->
+            k to v.indexState
+        }.toMap()
+    )
+
+    fun loadState(documentIndexState: DocumentIndexState): DocumentIndex {
+        val loadedMapping = mapping.map { (name, index) ->
+            val state = documentIndexState.fieldState[name]
+            name to (state?.let { index.loadState(it) } ?: index)
+        }.toMap().toMutableMap()
+        return DocumentIndex(loadedMapping,documentIndexState.documents.toMutableMap())
+    }
+
+
     fun index(document: Document) {
         documents.put(document.id,document)
         document.fields.forEach { (field,texts) ->

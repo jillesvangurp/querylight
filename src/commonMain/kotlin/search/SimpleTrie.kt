@@ -1,6 +1,9 @@
 package search
 
-private class TrieNode {
+import kotlinx.serialization.Serializable
+
+@Serializable
+class TrieNode {
     val children: MutableMap<Char, TrieNode> = mutableMapOf()
     var isLeaf = false
 
@@ -22,8 +25,9 @@ private class TrieNode {
 /**
  * Simple implementation of a Trie that may be used to match input strings to the longest matching prefix.
  */
-class SimpleStringTrie {
-    private val root: TrieNode = TrieNode()
+class SimpleStringTrie(
+    internal val root: TrieNode = TrieNode()
+) {
 
     /**
      * Add a string to the trie.

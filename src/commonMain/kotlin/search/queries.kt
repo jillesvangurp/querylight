@@ -90,7 +90,7 @@ class TermQuery(
 ) : Query {
     override fun hits(documentIndex: DocumentIndex, context: QueryContext): Hits {
         return (documentIndex.getFieldIndex(field)?.let {
-            it.termMatches(text)?.map { Hit(it.first, 1.0) }
+            it.termMatches(text)?.map { Hit(it.id, 1.0) }
         } ?: emptyList()).boost(normalizedBoost)
     }
 }

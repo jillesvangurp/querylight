@@ -5,11 +5,20 @@ import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalWasmDsl
 
 plugins {
     kotlin("multiplatform")
+    kotlin("plugin.serialization")
     id("maven-publish")
 }
 
 repositories {
     mavenCentral()
+    maven("https://maven.tryformation.com/releases") {
+        content {
+            includeGroup("com.jillesvangurp")
+            includeGroup("com.github.jillesvangurp")
+            includeGroup("com.tryformation")
+            includeGroup("com.tryformation.fritz2")
+        }
+    }
 }
 
 kotlin {
@@ -41,6 +50,8 @@ kotlin {
         commonMain {
             dependencies {
                 implementation(kotlin("stdlib-common"))
+                implementation("com.jillesvangurp:kotlinx-serialization-extensions:_")
+                implementation(KotlinX.serialization.json)
             }
         }
         commonTest {

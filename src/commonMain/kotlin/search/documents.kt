@@ -1,5 +1,8 @@
 package search
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 class Document(val id: String,val fields: Map<String, List<String>>)
 
 @DslMarker
