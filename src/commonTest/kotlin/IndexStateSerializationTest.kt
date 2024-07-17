@@ -11,7 +11,7 @@ class IndexStateSerializationTest {
 
         val state =  originalIndex.indexState
         val loadedIndex = originalIndex.loadState(state)
-        loadedIndex.mapping["description"]?.indexState?.reverseMap?.size shouldNotBe 0
+        loadedIndex.mapping["description"]?.textFieldIndexState?.reverseMap?.size shouldNotBe 0
         loadedIndex.count {  } shouldBe ogCount
     }
 }

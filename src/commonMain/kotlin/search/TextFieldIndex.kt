@@ -1,6 +1,7 @@
 package search
 
 import kotlin.math.log10
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 typealias Hit = Pair<String, Double>
@@ -10,11 +11,15 @@ typealias Hits = List<Hit>
 data class TermPos(val id: String, val position:Int)
 
 @Serializable
-data class IndexState(
+sealed interface IndexState
+
+@Serializable
+@SerialName("TextFieldIndexState")
+data class TextFieldIndexState(
     val termCounts: Map<String,Int>,
     val reverseMap: Map<String,List<TermPos>>,
     val trie: TrieNode,
-)
+): IndexState
 
 class TextFieldIndex(
     val analyzer: Analyzer = Analyzer(),
@@ -23,15 +28,20 @@ class TextFieldIndex(
     private val reverseMap: MutableMap<String, MutableList<TermPos>> = mutableMapOf(),
     private val trie: SimpleStringTrie = SimpleStringTrie()
 ) {
-    val indexState get() = IndexState(termCounts, reverseMap, trie.root)
+    val textFieldIndexState get() = TextFieldIndexState(termCounts, reverseMap, trie.root)
 
-    fun loadState(indexState: IndexState): TextFieldIndex {
-        return TextFieldIndex(
-            analyzer = analyzer, queryAnalyzer = queryAnalyzer,
-            termCounts = indexState.termCounts.toMutableMap(),
-            reverseMap = indexState.reverseMap.map { (k,v)-> k to v.toMutableList() }.toMap().toMutableMap(),
-            trie = SimpleStringTrie(indexState.trie)
-        )
+    fun loadState(textFieldIndexState: IndexState): TextFieldIndex {
+        if(textFieldIndexState is TextFieldIndexState) {
+            return TextFieldIndex(
+                analyzer = analyzer, queryAnalyzer = queryAnalyzer,
+                termCounts = textFieldIndexState.termCounts.toMutableMap(),
+                reverseMap = textFieldIndexState.reverseMap.map { (k, v) -> k to v.toMutableList() }.toMap()
+                    .toMutableMap(),
+                trie = SimpleStringTrie(textFieldIndexState.trie)
+            )
+        } else {
+            error("wrong index type; expecting TextFieldIndexState but was ${textFieldIndexState::class.simpleName}")
+        }
     }
 
     // docid -> word count so we can calculate tf

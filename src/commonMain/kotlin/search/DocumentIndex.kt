@@ -16,7 +16,7 @@ class DocumentIndex(
     val indexState get() = DocumentIndexState(
         documents = documents,
         fieldState = mapping.map { (k, v) ->
-            k to v.indexState
+            k to v.textFieldIndexState
         }.toMap()
     )
 
