@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 data class DocumentIndexState(val documents: Map<String, Document>, val fieldState: Map<String, IndexState>)
 
 class DocumentIndex(
-    val mapping: MutableMap<String, TextFieldIndex>,
+    val mapping: MutableMap<String, FieldIndex>,
     val documents: MutableMap<String, Document> = mutableMapOf(),
 ) {
     // TODO document removal is tricky with current TextIndex implementation
@@ -16,7 +16,7 @@ class DocumentIndex(
     val indexState get() = DocumentIndexState(
         documents = documents,
         fieldState = mapping.map { (k, v) ->
-            k to v.textFieldIndexState
+            k to v.indexState
         }.toMap()
     )
 
@@ -44,7 +44,9 @@ class DocumentIndex(
             }
 
             texts.forEach {
-                fieldIndex.add(document.id, it)
+                if(fieldIndex is TextFieldIndex) {
+                    fieldIndex.add(document.id, it)
+                }
             }
         }
     }

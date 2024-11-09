@@ -1,5 +1,7 @@
 @file:Suppress("UNUSED_VARIABLE")
 
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalWasmDsl
 
 
@@ -22,24 +24,70 @@ repositories {
 }
 
 kotlin {
-    jvm()
+    jvm {
+        // should work for android as well
+        @OptIn(ExperimentalKotlinGradlePluginApi::class)
+        compilerOptions {
+            jvmTarget = JvmTarget.JVM_11
+        }
+    }
     js(IR) {
-        nodejs()
+        browser {
+            testTask {
+                useMocha {
+                    // javascript is a lot slower than Java, we hit the default timeout of 2000
+                    timeout = "30s"
+                }
+            }
+        }
+        nodejs {
+            testTask {
+                useMocha {
+                    // javascript is a lot slower than Java, we hit the default timeout of 2000
+                    timeout = "30s"
+                }
+            }
+        }
     }
-    macosX64 { // on macOS
-    }
-    linuxX64 {
-
-    }
-    mingwX64 {
-
-    }
-    @OptIn(ExperimentalWasmDsl::class)
+    mingwX64()
+    macosX64()
+    macosArm64()
+    linuxX64()
+    linuxArm64()
+    // iOS targets
+    iosArm64()
+    iosX64()
+    iosSimulatorArm64()
+    @OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
     wasmJs {
-        browser()
-        nodejs()
-        d8()
+        browser {
+            testTask {
+                useMocha {
+                    // javascript is a lot slower than Java, we hit the default timeout of 2000
+                    timeout = "30s"
+                }
+            }
+        }
+        nodejs {
+            testTask {
+                useMocha {
+                    // javascript is a lot slower than Java, we hit the default timeout of 2000
+                    timeout = "30s"
+                }
+            }
+        }
+        d8 {
+            testTask {
+                useMocha {
+                    // javascript is a lot slower than Java, we hit the default timeout of 2000
+                    timeout = "30s"
+                }
+            }
+        }
     }
+
+
+
 // no kotest support yet ..
 //    @OptIn(ExperimentalWasmDsl::class)
 //    wasmWasi() {
@@ -89,14 +137,18 @@ kotlin {
         all {
             languageSettings {
                 optIn("kotlin.RequiresOptIn")
-                optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
+//                optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
                 languageVersion = "1.9"
                 apiVersion = "1.9"
             }
-
         }
-
     }
+}
+
+tasks.named("iosSimulatorArm64Test") {
+    // requires IOS simulator and tens of GB of other stuff to be installed
+    // so keep it disabled
+    enabled = false
 }
 
 publishing {

@@ -90,7 +90,11 @@ class TermQuery(
 ) : Query {
     override fun hits(documentIndex: DocumentIndex, context: QueryContext): Hits {
         return (documentIndex.getFieldIndex(field)?.let {
-            it.termMatches(text)?.map { Hit(it.id, 1.0) }
+            if(it is TextFieldIndex) {
+                it.termMatches(text)?.map { Hit(it.id, 1.0) }
+            } else {
+                emptyList()
+            }
         } ?: emptyList()).boost(normalizedBoost)
     }
 }
@@ -105,12 +109,16 @@ class RangeQuery(
 ) : Query {
     override fun hits(documentIndex: DocumentIndex, context: QueryContext): Hits {
         return (documentIndex.getFieldIndex(field)?.let {fieldIndex ->
-            fieldIndex.filterTermsByRange(
-                gt=gt,
-                gte=gte,
-                lt=lt,
-                lte=lte,
-            )
+            if(fieldIndex is TextFieldIndex) {
+                fieldIndex.filterTermsByRange(
+                    gt = gt,
+                    gte = gte,
+                    lt = lt,
+                    lte = lte,
+                )
+            } else {
+                emptyList()
+            }
         } ?: emptyList()).boost(normalizedBoost)
     }
 }
@@ -124,7 +132,7 @@ class MatchQuery(
 ) : Query {
     override fun hits(documentIndex: DocumentIndex, context: QueryContext): Hits {
         val fieldIndex = documentIndex.getFieldIndex(field)
-        if (fieldIndex != null) {
+        if (fieldIndex != null && fieldIndex is TextFieldIndex) {
             val searchTerms = fieldIndex.queryAnalyzer.analyze(text)
             val collectedHits = mutableMapOf<String, Double>()
 
@@ -178,7 +186,7 @@ class MatchPhrase(
 ): Query {
     override fun hits(documentIndex: DocumentIndex, context: QueryContext): Hits {
         val fieldIndex = documentIndex.getFieldIndex(field)
-        if (fieldIndex != null) {
+        if (fieldIndex != null && fieldIndex is TextFieldIndex) {
             val searchTerms = fieldIndex.queryAnalyzer.analyze(text)
 
             return fieldIndex.searchPhrase(searchTerms,slop)

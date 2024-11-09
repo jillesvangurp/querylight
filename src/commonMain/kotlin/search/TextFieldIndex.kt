@@ -11,9 +11,6 @@ typealias Hits = List<Hit>
 data class TermPos(val id: String, val position:Int)
 
 @Serializable
-sealed interface IndexState
-
-@Serializable
 @SerialName("TextFieldIndexState")
 data class TextFieldIndexState(
     val termCounts: Map<String,Int>,
@@ -27,20 +24,20 @@ class TextFieldIndex(
     private val termCounts: MutableMap<String, Int> = mutableMapOf(),
     private val reverseMap: MutableMap<String, MutableList<TermPos>> = mutableMapOf(),
     private val trie: SimpleStringTrie = SimpleStringTrie()
-) {
-    val textFieldIndexState get() = TextFieldIndexState(termCounts, reverseMap, trie.root)
+) : FieldIndex {
+    override val indexState: IndexState get() = TextFieldIndexState(termCounts, reverseMap, trie.root)
 
-    fun loadState(textFieldIndexState: IndexState): TextFieldIndex {
-        if(textFieldIndexState is TextFieldIndexState) {
+    override fun loadState(fieldIndexState: IndexState): FieldIndex {
+        if(fieldIndexState is TextFieldIndexState) {
             return TextFieldIndex(
                 analyzer = analyzer, queryAnalyzer = queryAnalyzer,
-                termCounts = textFieldIndexState.termCounts.toMutableMap(),
-                reverseMap = textFieldIndexState.reverseMap.map { (k, v) -> k to v.toMutableList() }.toMap()
+                termCounts = fieldIndexState.termCounts.toMutableMap(),
+                reverseMap = fieldIndexState.reverseMap.map { (k, v) -> k to v.toMutableList() }.toMap()
                     .toMutableMap(),
-                trie = SimpleStringTrie(textFieldIndexState.trie)
+                trie = SimpleStringTrie(fieldIndexState.trie)
             )
         } else {
-            error("wrong index type; expecting TextFieldIndexState but was ${textFieldIndexState::class.simpleName}")
+            error("wrong index type; expecting TextFieldIndexState but was ${fieldIndexState::class.simpleName}")
         }
     }
 
