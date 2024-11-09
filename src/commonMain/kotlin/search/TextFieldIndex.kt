@@ -1,6 +1,7 @@
 package search
 
 import kotlin.math.log10
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 typealias Hit = Pair<String, Double>
@@ -10,11 +11,12 @@ typealias Hits = List<Hit>
 data class TermPos(val id: String, val position:Int)
 
 @Serializable
-data class IndexState(
+@SerialName("TextFieldIndexState")
+data class TextFieldIndexState(
     val termCounts: Map<String,Int>,
     val reverseMap: Map<String,List<TermPos>>,
     val trie: TrieNode,
-)
+): IndexState
 
 class TextFieldIndex(
     val analyzer: Analyzer = Analyzer(),
@@ -22,16 +24,21 @@ class TextFieldIndex(
     private val termCounts: MutableMap<String, Int> = mutableMapOf(),
     private val reverseMap: MutableMap<String, MutableList<TermPos>> = mutableMapOf(),
     private val trie: SimpleStringTrie = SimpleStringTrie()
-) {
-    val indexState get() = IndexState(termCounts, reverseMap, trie.root)
+) : FieldIndex {
+    override val indexState: IndexState get() = TextFieldIndexState(termCounts, reverseMap, trie.root)
 
-    fun loadState(indexState: IndexState): TextFieldIndex {
-        return TextFieldIndex(
-            analyzer = analyzer, queryAnalyzer = queryAnalyzer,
-            termCounts = indexState.termCounts.toMutableMap(),
-            reverseMap = indexState.reverseMap.map { (k,v)-> k to v.toMutableList() }.toMap().toMutableMap(),
-            trie = SimpleStringTrie(indexState.trie)
-        )
+    override fun loadState(fieldIndexState: IndexState): FieldIndex {
+        if(fieldIndexState is TextFieldIndexState) {
+            return TextFieldIndex(
+                analyzer = analyzer, queryAnalyzer = queryAnalyzer,
+                termCounts = fieldIndexState.termCounts.toMutableMap(),
+                reverseMap = fieldIndexState.reverseMap.map { (k, v) -> k to v.toMutableList() }.toMap()
+                    .toMutableMap(),
+                trie = SimpleStringTrie(fieldIndexState.trie)
+            )
+        } else {
+            error("wrong index type; expecting TextFieldIndexState but was ${fieldIndexState::class.simpleName}")
+        }
     }
 
     // docid -> word count so we can calculate tf

@@ -1,5 +1,6 @@
 import kotlin.test.Test
 import search.TermQuery
+import search.TextFieldIndex
 import search.search
 
 class SignificantTermsTest {
@@ -7,7 +8,7 @@ class SignificantTermsTest {
     fun shouldCalculateMostSignificantTerms() {
         val index = quotesIndex()
 
-        index.getFieldIndex("tags")!!.termsAggregation(10).forEach { (term, count)->
+        index.getFieldIndex("tags")!!.let { it as TextFieldIndex }.termsAggregation(10).forEach { (term, _)->
             val hits = index.search {
                 query = TermQuery("tags",term)
             }
@@ -18,7 +19,7 @@ class SignificantTermsTest {
                 ## $term
                 
             """.trimIndent())
-            val terms = index.getFieldIndex("title")!!.getTopSignificantTerms(5,ids)
+            val terms = index.getFieldIndex("title")!!.let { it as TextFieldIndex }.getTopSignificantTerms(5,ids)
             terms.forEach {(t,s) ->
                 println("$t: $s")
             }
