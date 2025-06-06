@@ -3,6 +3,12 @@ import kotlin.test.Test
 import search.cosineSimilarity
 import search.hashFunction
 import search.populateLSHBuckets
+import search.VectorFieldIndex
+import search.VectorFieldIndexState
+import kotlin.random.Random
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 
 class AknnTest {
 
@@ -41,5 +47,42 @@ class AknnTest {
         )
         val buckets = populateLSHBuckets(vectors, randomVectors)
         buckets.isNotEmpty() shouldBe true
+    }
+
+    @Test
+    fun testVectorFieldIndexQuery() {
+        val index = VectorFieldIndex(2, 3, Random(42))
+        index.insert("id1", listOf(listOf(1.0, 2.0, 3.0)))
+        index.insert("id2", listOf(listOf(4.0, 5.0, 6.0)))
+        index.insert("id3", listOf(listOf(1.1, 2.1, 3.1)))
+
+        val result = index.query(listOf(1.0, 2.0, 3.0), 1)
+        result.first().first shouldBe "id1"
+    }
+
+    @Test
+    fun testVectorFieldIndexStateRoundTrip() {
+        val index = VectorFieldIndex(2, 3, Random(42))
+        index.insert("id1", listOf(listOf(1.0, 2.0, 3.0)))
+        index.insert("id2", listOf(listOf(4.0, 5.0, 6.0)))
+
+        val state = index.indexState as VectorFieldIndexState
+        val loaded = index.loadState(state) as VectorFieldIndex
+
+        val result = loaded.query(listOf(1.0, 2.0, 3.0), 1)
+        result.first().first shouldBe "id1"
+    }
+
+    @Test
+    fun testVectorFieldIndexSerialization() {
+        val index = VectorFieldIndex(2, 3, Random(42))
+        index.insert("id1", listOf(listOf(1.0, 2.0, 3.0)))
+
+        val json = Json.encodeToString(index.indexState as VectorFieldIndexState)
+        val state = Json.decodeFromString<VectorFieldIndexState>(json)
+        val loaded = index.loadState(state) as VectorFieldIndex
+
+        val result = loaded.query(listOf(1.0, 2.0, 3.0), 1)
+        result.first().first shouldBe "id1"
     }
 }
