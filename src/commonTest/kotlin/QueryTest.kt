@@ -13,7 +13,7 @@ class QueryTest {
 
     @Test
     fun shouldReturnDocs() {
-        RankingAlgorithm.values().forEach { alg ->
+        RankingAlgorithm.entries.forEach { alg ->
             val index = testIndex(alg)
             val results = index.search {
                 from=0
@@ -26,7 +26,7 @@ class QueryTest {
 
     @Test
     fun shouldFindShakespeare() {
-        RankingAlgorithm.values().forEach { alg ->
+        RankingAlgorithm.entries.forEach { alg ->
             val index = quotesIndex(alg)
             index.documents.size shouldBeGreaterThan 0
             val results = index.search {
@@ -45,7 +45,7 @@ class QueryTest {
 
     @Test
     fun shouldDoPhraseSearch() {
-        RankingAlgorithm.values().forEach { alg ->
+        RankingAlgorithm.entries.forEach { alg ->
             val index = quotesIndex(alg)
             val results= index.search {
                 query = MatchPhrase("description", "to be or not to be")
@@ -57,7 +57,7 @@ class QueryTest {
 
     @Test
     fun shouldBoostThings() {
-        RankingAlgorithm.values().forEach { alg ->
+        RankingAlgorithm.entries.forEach { alg ->
             val index = quotesIndex(alg)
             index.search {
                 query = BoolQuery(
@@ -75,7 +75,7 @@ class QueryTest {
 
     @Test
     fun shouldIncludePrefixes() {
-        RankingAlgorithm.values().forEach { alg ->
+        RankingAlgorithm.entries.forEach { alg ->
             val index = quotesIndex(alg)
             index.search {
                 query = MatchQuery(SampleObject::description.name, "ba")
