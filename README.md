@@ -1,13 +1,13 @@
 # Querylight
 
-Querylight is an in memory, kotlin multi platform text indexing library that implements tfidf and a minimal query language. Great for client side search in web apps, android or other Kotlin apps.
+Querylight is an in memory, kotlin multi platform text indexing library that implements a minimal query language and pluggable ranking algorithms. TF‑IDF is the default and BM25 is available as well. Great for client side search in web apps, android or other Kotlin apps.
 
 This is my attempt at building a small kotlin library for implementing offline search in e.g. a website or inside a
 mobile phone app (android, IOS, etc.). This is currently quite early stage and the API can and will change. For documentation, refer to the tests.
 
 # General design
 
-Users of Elasticsearch, will recognize a thing or two. I loosely follow their DSL. At the core is a simple in memory reverse index that implements TF/IDF for ranking. I've implemented a simple Analyzer structure similar to what Elasticsearch has and there's MatchQuery and BoolQuery that are usable for simple queries.
+Users of Elasticsearch, will recognize a thing or two. I loosely follow their DSL. At the core is a simple in memory reverse index. Ranking is pluggable and selected via `RankingAlgorithm`; by default TF/IDF is used but you can switch to BM25. I've implemented a simple Analyzer structure similar to what Elasticsearch has and there's MatchQuery and BoolQuery that are usable for simple queries.
 
 Don't expect amazing performance or search quality. This is not intended to scale massively and only appropriate for small amounts of data. That being said, it does work fine for small data sets in web applications, which is what I use this for.
 
@@ -82,7 +82,17 @@ fun quotesIndex(): DocumentIndex {
     return documentIndex
 }
 
+```kotlin
+// Use BM25 ranking instead of TF/IDF
+val bm25Index = DocumentIndex(
+    mutableMapOf(
+        "title" to TextFieldIndex(rankingAlgorithm = RankingAlgorithm.BM25),
+        "description" to TextFieldIndex(rankingAlgorithm = RankingAlgorithm.BM25)
+    )
+)
 ```
+
+BM25Config defaults: k1 = 1.2 and b = 0.75
 
 One you have your index, you can query it:
 
