@@ -3,7 +3,6 @@ import kotlin.test.Test
 import kotlin.random.Random
 import search.VectorFieldIndex
 import search.bigramVector
-import search.quotesIndex
 import search.Analyzer
 
 class SyntacticVectorTest {
@@ -21,12 +20,15 @@ class SyntacticVectorTest {
         }
 
         val queryVec = bigramVector(analyzer.analyze("to be or not to be"))
-        val result = index.query(queryVec, 1)
+        val result = index.query(queryVec, 10)
 
         val hamletId = docs.documents.entries.first { entry ->
             entry.value.fields["title"]?.any { it.contains("Hamlet") } == true
         }.key
 
+        result.forEach {
+            println(it.first)
+        }
         result.first().first shouldBe hamletId
     }
 }
