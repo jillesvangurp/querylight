@@ -1,6 +1,7 @@
 import search.Document
 import search.DocumentIndex
 import search.TextFieldIndex
+import search.RankingAlgorithm
 import kotlin.random.Random
 import search.Analyzer
 import search.KeywordTokenizer
@@ -20,12 +21,14 @@ data class SampleObject(
     )
 }
 
-fun testIndex(): DocumentIndex {
+fun testIndex(
+    algorithm: RankingAlgorithm = RankingAlgorithm.TFIDF
+): DocumentIndex {
     val documentIndex = DocumentIndex(
         mutableMapOf(
-            "title" to TextFieldIndex(),
-            "description" to TextFieldIndex(),
-            "tags" to TextFieldIndex(),
+            "title" to TextFieldIndex(rankingAlgorithm = algorithm),
+            "description" to TextFieldIndex(rankingAlgorithm = algorithm),
+            "tags" to TextFieldIndex(rankingAlgorithm = algorithm),
         )
     )
 
@@ -62,11 +65,13 @@ fun testIndex(): DocumentIndex {
 }
 
 
-fun quotesIndex(): DocumentIndex {
+fun quotesIndex(
+    algorithm: RankingAlgorithm = RankingAlgorithm.TFIDF
+): DocumentIndex {
     val documentIndex = DocumentIndex(
         mutableMapOf(
-            "title" to TextFieldIndex(),
-            "description" to TextFieldIndex(),
+            "title" to TextFieldIndex(rankingAlgorithm = algorithm),
+            "description" to TextFieldIndex(rankingAlgorithm = algorithm),
             "tags" to TextFieldIndex(
                 analyzer = Analyzer(
                     textFilters = listOf(),
