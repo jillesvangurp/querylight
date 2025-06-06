@@ -13,9 +13,6 @@ typealias Hits = List<Hit>
 enum class RankingAlgorithm { TFIDF, BM25 }
 
 @Serializable
-data class BM25Config(val k1: Double = 1.5, val b: Double = 0.75)
-
-@Serializable
 data class TermPos(val id: String, val position:Int)
 
 @Serializable

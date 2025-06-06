@@ -1,10 +1,10 @@
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import kotlin.test.Test
+import search.Bm25Config
 import search.TextFieldIndexState
 import search.TextFieldIndex
 import search.RankingAlgorithm
-import search.Bm25Config
 import search.DocumentIndex
 import search.count
 
@@ -27,7 +27,11 @@ class IndexStateSerializationTest {
     fun shouldPreserveRankingSettings() {
         val index = DocumentIndex(
             mutableMapOf(
-                "title" to TextFieldIndex(rankingAlgorithm = RankingAlgorithm.BM25, bm25Config = Bm25Config(k1 = 2.0, b = 0.6)),
+                "title" to TextFieldIndex(rankingAlgorithm = RankingAlgorithm.BM25, bm25Config = Bm25Config(
+                    k1 = 2.0,
+                    b = 0.6
+                )
+                ),
                 "description" to TextFieldIndex(rankingAlgorithm = RankingAlgorithm.BM25, bm25Config = Bm25Config(k1 = 2.0, b = 0.6))
             )
         )

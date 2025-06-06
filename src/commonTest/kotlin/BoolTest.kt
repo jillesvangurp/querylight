@@ -1,10 +1,10 @@
-import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.collections.shouldNotContainAll
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.ints.shouldBeLessThan
 import io.kotest.matchers.shouldBe
+import kotlin.test.Test
 import search.BoolQuery
 import search.Document
 import search.DocumentIndex
@@ -12,7 +12,6 @@ import search.Hits
 import search.MatchQuery
 import search.TextFieldIndex
 import search.ids
-import kotlin.test.Test
 
 class BoolTest {
     
