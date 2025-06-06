@@ -3,6 +3,8 @@ package search
 import kotlin.math.log10
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import search.RankingAlgorithm
+import search.Bm25Config
 
 typealias Hit = Pair<String, Double>
 typealias Hits = List<Hit>
@@ -16,21 +18,28 @@ data class TextFieldIndexState(
     val termCounts: Map<String,Int>,
     val reverseMap: Map<String,List<TermPos>>,
     val trie: TrieNode,
+    val rankingAlgorithm: RankingAlgorithm = RankingAlgorithm.TF_IDF,
+    val bm25Config: Bm25Config = Bm25Config(),
 ): IndexState
 
 class TextFieldIndex(
     val analyzer: Analyzer = Analyzer(),
     val queryAnalyzer: Analyzer = Analyzer(),
+    val rankingAlgorithm: RankingAlgorithm = RankingAlgorithm.TF_IDF,
+    val bm25Config: Bm25Config = Bm25Config(),
     private val termCounts: MutableMap<String, Int> = mutableMapOf(),
     private val reverseMap: MutableMap<String, MutableList<TermPos>> = mutableMapOf(),
     private val trie: SimpleStringTrie = SimpleStringTrie()
 ) : FieldIndex {
-    override val indexState: IndexState get() = TextFieldIndexState(termCounts, reverseMap, trie.root)
+    override val indexState: IndexState get() = TextFieldIndexState(termCounts, reverseMap, trie.root, rankingAlgorithm, bm25Config)
 
     override fun loadState(fieldIndexState: IndexState): FieldIndex {
         if(fieldIndexState is TextFieldIndexState) {
             return TextFieldIndex(
-                analyzer = analyzer, queryAnalyzer = queryAnalyzer,
+                analyzer = analyzer,
+                queryAnalyzer = queryAnalyzer,
+                rankingAlgorithm = fieldIndexState.rankingAlgorithm,
+                bm25Config = fieldIndexState.bm25Config,
                 termCounts = fieldIndexState.termCounts.toMutableMap(),
                 reverseMap = fieldIndexState.reverseMap.map { (k, v) -> k to v.toMutableList() }.toMap()
                     .toMutableMap(),
