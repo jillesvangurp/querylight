@@ -1,6 +1,7 @@
 package search
 
 import kotlin.math.log10
+import kotlin.math.ln
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import search.RankingAlgorithm
@@ -8,6 +9,10 @@ import search.Bm25Config
 
 typealias Hit = Pair<String, Double>
 typealias Hits = List<Hit>
+
+enum class RankingAlgorithm { TFIDF, BM25 }
+
+data class BM25Config(val k1: Double = 1.5, val b: Double = 0.75)
 
 @Serializable
 data class TermPos(val id: String, val position:Int)
@@ -27,6 +32,7 @@ class TextFieldIndex(
     val queryAnalyzer: Analyzer = Analyzer(),
     val rankingAlgorithm: RankingAlgorithm = RankingAlgorithm.TF_IDF,
     val bm25Config: Bm25Config = Bm25Config(),
+
     private val termCounts: MutableMap<String, Int> = mutableMapOf(),
     private val reverseMap: MutableMap<String, MutableList<TermPos>> = mutableMapOf(),
     private val trie: SimpleStringTrie = SimpleStringTrie()
@@ -75,7 +81,7 @@ class TextFieldIndex(
             trie.match(term).flatMap { t -> termMatches(t) ?: listOf() }.distinct().takeIf { it.isNotEmpty() }
         } else null
 
-        return matches?.let { calculateTfIdf(it.map { it.id }) } ?: emptyList()
+        return matches?.let { calculateScore(it.map { it.id }) } ?: emptyList()
     }
 
     fun searchPhrase(terms: List<String>, slop: Int = 0): List<Hit> {
@@ -99,13 +105,13 @@ class TextFieldIndex(
             }
         }
 
-        return calculateTfIdf(phraseMatches)
+        return calculateScore(phraseMatches)
     }
 
     fun searchPrefix(prefix: String): List<Hit> {
         val terms = trie.match(prefix)
         val docIds = terms.flatMap { termMatches(it)?.map { it.id } ?: listOf() }.distinct()
-        return calculateTfIdf(docIds)
+        return calculateScore(docIds)
     }
 
     fun termMatches(term: String): List<TermPos>? {
@@ -151,6 +157,13 @@ class TextFieldIndex(
         }.distinct().map { it to 1.0 }.toList()
     }
 
+    private fun calculateScore(docIds: List<String>?): List<Pair<String, Double>> {
+        return when(rankingAlgorithm) {
+            RankingAlgorithm.TFIDF -> calculateTfIdf(docIds)
+            RankingAlgorithm.BM25 -> calculateBm25(docIds)
+        }
+    }
+
     private fun calculateTfIdf(docIds: List<String>?): List<Pair<String, Double>> {
         val termCountsPerDoc = mutableMapOf<String, Int>()
         val matchedDocs = mutableSetOf<String>()
@@ -174,6 +187,30 @@ class TextFieldIndex(
             docId to tfIdf
         }
         return unsorted.sortedByDescending { (_, tfIdf) -> tfIdf }
+    }
+
+    private fun calculateBm25(docIds: List<String>?): List<Pair<String, Double>> {
+        val termCountsPerDoc = mutableMapOf<String, Int>()
+        val matchedDocs = mutableSetOf<String>()
+        docIds?.forEach { docId ->
+            termCountsPerDoc[docId] = termCountsPerDoc.getOrElse(docId) { 0 } + 1
+            matchedDocs.add(docId)
+        }
+        val df = matchedDocs.size.toDouble()
+        val totalDocs = termCounts.size.toDouble()
+        val avgDocLength = if (totalDocs == 0.0) 0.0 else termCounts.values.average()
+        val idf = if (df == 0.0) 0.0 else ln(1.0 + (totalDocs - df + 0.5) / (df + 0.5))
+
+        val unsorted = termCountsPerDoc.map { (docId, termCount) ->
+            val wordCountForDoc = wordCount(docId).toDouble()
+            val tf = termCount.toDouble()
+            val numerator = tf * (bm25Config.k1 + 1)
+            val denominator = tf + bm25Config.k1 * (1 - bm25Config.b + bm25Config.b * (wordCountForDoc / avgDocLength))
+            val score = if (denominator == 0.0) 0.0 else idf * numerator / denominator
+            docId to score
+        }
+
+        return unsorted.sortedByDescending { it.second }
     }
 
     private fun wordCount(docId: String) = termCounts[docId] ?: 0
