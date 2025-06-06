@@ -10,7 +10,7 @@ data class SampleObject(
     val title: String,
     val description: String,
     val tags: List<String> = listOf(),
-    val id: String = Random.nextLong(0, Long.MAX_VALUE).toString()
+    val id: String = Random.nextLong(0, Long.MAX_VALUE).toString()+title
 ) {
     fun toDoc() = Document(
         id, mapOf(
