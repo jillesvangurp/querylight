@@ -12,6 +12,7 @@ typealias Hits = List<Hit>
 
 enum class RankingAlgorithm { TFIDF, BM25 }
 
+@Serializable
 data class BM25Config(val k1: Double = 1.5, val b: Double = 0.75)
 
 @Serializable
@@ -23,14 +24,14 @@ data class TextFieldIndexState(
     val termCounts: Map<String,Int>,
     val reverseMap: Map<String,List<TermPos>>,
     val trie: TrieNode,
-    val rankingAlgorithm: RankingAlgorithm = RankingAlgorithm.TF_IDF,
+    val rankingAlgorithm: RankingAlgorithm = RankingAlgorithm.TFIDF,
     val bm25Config: Bm25Config = Bm25Config(),
 ): IndexState
 
 class TextFieldIndex(
     val analyzer: Analyzer = Analyzer(),
     val queryAnalyzer: Analyzer = Analyzer(),
-    val rankingAlgorithm: RankingAlgorithm = RankingAlgorithm.TF_IDF,
+    val rankingAlgorithm: RankingAlgorithm = RankingAlgorithm.TFIDF,
     val bm25Config: Bm25Config = Bm25Config(),
 
     private val termCounts: MutableMap<String, Int> = mutableMapOf(),
