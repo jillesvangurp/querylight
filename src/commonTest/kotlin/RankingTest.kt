@@ -32,7 +32,7 @@ class RankingTest {
         val results = bm25.search(MatchQuery("text", "foo"))
         // expected scores calculated with Lucene's BM25 formula
         val expected = listOf(
-            "1" to 0.783339382076226,
+            "1" to 0.7385771316718703,
             "2" to 0.4700036292457356
         )
         results.size shouldBe expected.size

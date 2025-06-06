@@ -4,13 +4,13 @@ import kotlin.math.log10
 import kotlin.math.ln
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import search.RankingAlgorithm
+import search.Bm25Config
 
 typealias Hit = Pair<String, Double>
 typealias Hits = List<Hit>
 
 enum class RankingAlgorithm { TFIDF, BM25 }
-
-data class BM25Config(val k1: Double = 1.5, val b: Double = 0.75)
 
 @Serializable
 data class TermPos(val id: String, val position:Int)
@@ -21,26 +21,29 @@ data class TextFieldIndexState(
     val termCounts: Map<String,Int>,
     val reverseMap: Map<String,List<TermPos>>,
     val trie: TrieNode,
+    val rankingAlgorithm: RankingAlgorithm = RankingAlgorithm.TFIDF,
+    val bm25Config: Bm25Config = Bm25Config(),
 ): IndexState
 
 class TextFieldIndex(
     val analyzer: Analyzer = Analyzer(),
     val queryAnalyzer: Analyzer = Analyzer(),
     val rankingAlgorithm: RankingAlgorithm = RankingAlgorithm.TFIDF,
-    val bm25Config: BM25Config = BM25Config(),
+    val bm25Config: Bm25Config = Bm25Config(),
+
     private val termCounts: MutableMap<String, Int> = mutableMapOf(),
     private val reverseMap: MutableMap<String, MutableList<TermPos>> = mutableMapOf(),
     private val trie: SimpleStringTrie = SimpleStringTrie()
 ) : FieldIndex {
-    override val indexState: IndexState get() = TextFieldIndexState(termCounts, reverseMap, trie.root)
+    override val indexState: IndexState get() = TextFieldIndexState(termCounts, reverseMap, trie.root, rankingAlgorithm, bm25Config)
 
     override fun loadState(fieldIndexState: IndexState): FieldIndex {
         if(fieldIndexState is TextFieldIndexState) {
             return TextFieldIndex(
                 analyzer = analyzer,
                 queryAnalyzer = queryAnalyzer,
-                rankingAlgorithm = rankingAlgorithm,
-                bm25Config = bm25Config,
+                rankingAlgorithm = fieldIndexState.rankingAlgorithm,
+                bm25Config = fieldIndexState.bm25Config,
                 termCounts = fieldIndexState.termCounts.toMutableMap(),
                 reverseMap = fieldIndexState.reverseMap.map { (k, v) -> k to v.toMutableList() }.toMap()
                     .toMutableMap(),
