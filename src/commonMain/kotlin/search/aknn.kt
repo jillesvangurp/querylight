@@ -2,14 +2,26 @@ package search
 
 import kotlin.math.sqrt
 import kotlin.random.Random
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 // Define a typealias for better readability
 typealias Vector = List<Double>
 
+@Serializable
+@SerialName("VectorFieldIndexState")
+data class VectorFieldIndexState(
+    val numHashTables: Int,
+    val dimensions: Int,
+    val vectors: Map<String, List<Vector>>,
+    val randomVectorsList: List<List<Vector>>
+) : IndexState
+
 class VectorFieldIndex(
     private val numHashTables: Int,
-    private val dimensions: Int
-
+    private val dimensions: Int,
+    private val random: Random = Random,
+    initialRandomVectors: List<List<Vector>>? = null
 ) : FieldIndex {
 
     private val vectors = mutableMapOf<String, List<Vector>>()
@@ -17,18 +29,41 @@ class VectorFieldIndex(
     private val randomVectorsList = mutableListOf<List<Vector>>()
 
     override val indexState: IndexState
-        get() = TODO("Not yet implemented")
+        get() = VectorFieldIndexState(
+            numHashTables = numHashTables,
+            dimensions = dimensions,
+            vectors = vectors,
+            randomVectorsList = randomVectorsList
+        )
 
     override fun loadState(fieldIndexState: IndexState): FieldIndex {
-        TODO("Not yet implemented")
+        if (fieldIndexState is VectorFieldIndexState) {
+            val loaded = VectorFieldIndex(
+                numHashTables = fieldIndexState.numHashTables,
+                dimensions = fieldIndexState.dimensions,
+                random = random,
+                initialRandomVectors = fieldIndexState.randomVectorsList
+            )
+            fieldIndexState.vectors.forEach { (id, vecs) ->
+                loaded.insert(id, vecs)
+            }
+            return loaded
+        } else {
+            error("wrong index type; expecting VectorFieldIndexState but was ${fieldIndexState::class.simpleName}")
+        }
     }
 
     init {
         // Generate multiple hash tables with different random vectors
-        repeat(numHashTables) {
-            val randomVectors = List(dimensions) { normalizeVector(generateRandomVector(dimensions)) }
-            randomVectorsList.add(randomVectors)
-            allBuckets.add(mutableMapOf())
+        if (initialRandomVectors != null) {
+            randomVectorsList.addAll(initialRandomVectors)
+            repeat(numHashTables) { allBuckets.add(mutableMapOf()) }
+        } else {
+            repeat(numHashTables) {
+                val randomVectors = List(dimensions) { normalizeVector(generateRandomVector(dimensions, random)) }
+                randomVectorsList.add(randomVectors)
+                allBuckets.add(mutableMapOf())
+            }
         }
     }
 
@@ -87,8 +122,8 @@ fun cosineSimilarity(v1: Vector, v2: Vector): Double {
 }
 
 // Generate random vector
-fun generateRandomVector(dimensions: Int): Vector {
-    return List(dimensions) { Random.nextDouble() }
+fun generateRandomVector(dimensions: Int, random: Random = Random): Vector {
+    return List(dimensions) { random.nextDouble() }
 }
 
 // Normalize a vector
