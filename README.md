@@ -156,5 +156,19 @@ index.documents.forEach { (id, doc) ->
 val nearest = vectorIndex.query(bigramVector("to be"), 3)
 ```
 
+### Geo search
+
+```kotlin
+val geoIndex = GeoFieldIndex()
+val geoDoc = Document(
+    id = "berlin",
+    fields = mapOf("location" to listOf(Geometry.Point.of(13.4,52.5).toString()))
+)
+val index = DocumentIndex(mutableMapOf("location" to geoIndex))
+index.index(geoDoc)
+val bbox = doubleArrayOf(13.0,52.0,14.0,53.0).toGeometry().coordinates!!
+val results = index.search { query = GeoPolygonQuery("location", bbox) }
+```
+
 Currently there are a handful of queries supported. `BoolQuery` is loosely styled after the Elasticsearch/OpenSearch bool query. Same for `MatchQuery`, `MatchPhrase`, `TermQuery`, `RangeQuery` and `MatchAll`.
 
