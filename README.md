@@ -1,23 +1,34 @@
 # Querylight
 
-Querylight is an in memory, kotlin multi platform text indexing library that implements a minimal query language and pluggable ranking algorithms. TF‑IDF is the default and BM25 is available as well. Great for client side search in web apps, android or other Kotlin apps.
+Querylight is an in memory, Kotlin multiplatform text indexing library that implements a minimal query language and pluggable ranking algorithms. TF‑IDF is the default and BM25 is available as well. Great for client side search in web apps, Android or other Kotlin apps.
 
-This is my attempt at building a small kotlin library for implementing offline search in e.g. a website or inside a
-mobile phone app (android, IOS, etc.). This is currently quite early stage and the API can and will change. For documentation, refer to the tests.
+This is my attempt at building a small Kotlin library for implementing offline search in e.g. a website or inside a mobile phone app (Android, iOS, etc.). This is currently quite early stage and the API can and will change. For documentation, refer to the tests.
 
-# General design
+## General design
 
-Users of Elasticsearch, will recognize a thing or two. I loosely follow their DSL. At the core is a simple in memory reverse index. Ranking is pluggable and selected via `RankingAlgorithm`; by default TF/IDF is used but you can switch to BM25. I've implemented a simple Analyzer structure similar to what Elasticsearch has and there's MatchQuery and BoolQuery that are usable for simple queries.
+Users of Elasticsearch will recognize a thing or two. I loosely follow their DSL. At the core is a simple in memory reverse index. Ranking is pluggable and selected via `RankingAlgorithm`; by default TF‑IDF is used but you can switch to BM25. I've implemented a simple Analyzer structure similar to what Elasticsearch has and there's `MatchQuery` and `BoolQuery` that are usable for simple queries.
 
 Don't expect amazing performance or search quality. This is not intended to scale massively and only appropriate for small amounts of data. That being said, it does work fine for small data sets in web applications, which is what I use this for.
 
 Key motivation for building this is that I wanted offline search without a server and with some control over things like ranking. Judging from hacker news, there are countless others building their own search libraries. So yes, this is somewhat redundant.
 
+## Features
+
+* Pure Kotlin multiplatform implementation with no dependencies.
+* Pluggable ranking algorithms (`TFIDF` and `BM25`).
+* Simple analyzer with token filters (lowercase, elision and punctuation removal) and customizable tokenizers.
+* Query DSL with `BoolQuery`, `MatchQuery`, `MatchPhrase`, `TermQuery`, `RangeQuery` and `MatchAll`.
+* Prefix and phrase matching (including slop).
+* Range queries on textual values.
+* Aggregations for top terms and significant terms.
+* Index state can be serialized and loaded later.
+* Optional `VectorFieldIndex` for approximate k‑nearest‑neighbour search.
+
 ## Kotlin Multiplatform
 
-Since this is a kotlin multiplatform library without dependencies, it should be possible to get this running pretty much anywhere Kotlin runs. I use it mainly in a kotlin-js based web application currently but it should do fine on IOS/Android with compose multiplatform, spring servers, or any other places you use Kotlin.
+Since this is a Kotlin multiplatform library without dependencies, it should be possible to get this running pretty much anywhere Kotlin runs. I use it mainly in a Kotlin‑JS based web application currently but it should do fine on iOS/Android with compose multiplatform, Spring servers, or any other places you use Kotlin.
 
-## Get it 
+## Get it
 
 We publish jars for this library to our own maven repository. Add it like this:
 
@@ -81,6 +92,7 @@ fun quotesIndex(): DocumentIndex {
     ).map(SampleObject::toDoc).forEach(documentIndex::index)
     return documentIndex
 }
+```
 
 ```kotlin
 // Use BM25 ranking instead of TF/IDF
@@ -92,9 +104,9 @@ val bm25Index = DocumentIndex(
 )
 ```
 
-BM25Config defaults: k1 = 1.2 and b = 0.75
+`Bm25Config` defaults: `k1 = 1.2` and `b = 0.75`
 
-One you have your index, you can query it:
+Once you have your index, you can query it:
 
 ```kotlin
 val index = quotesIndex()
@@ -105,10 +117,44 @@ val results = index.search {
         )
     )
 }
-results.forEach { (id,score) ->
+results.forEach { (id, score) ->
     println(id + " " + score + " " + index.documents[id]?.let { "${it.fields["description"]} (${it.fields["title"]})" })
 }
-
 ```
 
-Currently there are a handful of queries supported. `BoolQuery` is loosely styled after the Elasticsearch/Opensearch bool query. Same for `MatchQuery` and `TermQuery`. There's also a `MatchAll`.
+### Boolean and Range queries
+
+```kotlin
+val rangeResults = index.search {
+    query = RangeQuery("title", gte = "Douglas", lte = "George")
+}
+
+val boolResults = index.search {
+    query = BoolQuery(
+        must = listOf(MatchQuery("title", "Galaxy")),
+        should = listOf(MatchQuery("description", "bricks", prefixMatch = true))
+    )
+}
+```
+
+### Phrase and prefix matching
+
+```kotlin
+index.search { query = MatchPhrase("description", "to be or not to be") }
+index.search { query = MatchQuery("description", "bar", prefixMatch = true) }
+```
+
+### Vector search
+
+```kotlin
+val vectorIndex = VectorFieldIndex(4, 36 * 36)
+index.documents.forEach { (id, doc) ->
+    val text = doc.fields["description"]?.joinToString(" ") ?: ""
+    val vec = bigramVector(text)
+    vectorIndex.insert(id, listOf(vec))
+}
+val nearest = vectorIndex.query(bigramVector("to be"), 3)
+```
+
+Currently there are a handful of queries supported. `BoolQuery` is loosely styled after the Elasticsearch/OpenSearch bool query. Same for `MatchQuery`, `MatchPhrase`, `TermQuery`, `RangeQuery` and `MatchAll`.
+
