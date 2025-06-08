@@ -44,8 +44,9 @@ class DocumentIndex(
             }
 
             texts.forEach {
-                if(fieldIndex is TextFieldIndex) {
-                    fieldIndex.add(document.id, it)
+                when(fieldIndex) {
+                    is TextFieldIndex -> fieldIndex.add(document.id, it)
+                    is GeoFieldIndex -> fieldIndex.add(document.id, it)
                 }
             }
         }

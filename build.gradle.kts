@@ -100,6 +100,7 @@ kotlin {
                 implementation(kotlin("stdlib-common"))
                 implementation("com.jillesvangurp:kotlinx-serialization-extensions:_")
                 implementation(KotlinX.serialization.json)
+                implementation("com.github.jillesvangurp:geogeometry:_")
             }
         }
         commonTest {
