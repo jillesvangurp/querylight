@@ -139,26 +139,40 @@ class MatchQuery(
             if (operation == OP.AND) {
                 // start with the smallest list
                 val termHits = searchTerms.map {
-                    fieldIndex.searchTerm(it,prefixMatch)
+                    fieldIndex.searchTerm(it, prefixMatch)
                 }.sortedBy { it.size }
-                // quick check to see if we can return right away (if one of the terms did not match, we have no hits)
-                if (termHits.isEmpty() || termHits[0].isEmpty()) {
-                    listOf<Hit>()
-                } else {
-                    termHits.first().forEach { (docId, score) ->
-                        collectedHits[docId] = score
+
+                if (termHits.isEmpty()) {
+                    return emptyList()
+                }
+
+                var intersectedHits: MutableMap<String, Double>? = null
+
+                termHits.forEach { hits ->
+                    if (hits.isEmpty()) {
+                        return emptyList()
                     }
-                    // plenty of potential to optimize this later
-                    // if we have an efficient way to look up keys from sub lists, simply looking up each
-                    // of the keys in the smallest list in the other lists is potentially faster if we have
-                    // some terms with a lot of hits.
-                    termHits.subList(1, termHits.size).forEach {
-                        it.forEach { hit ->
-                            if (collectedHits.containsKey(hit.first)) {
-                                collectedHits[hit.first] = hit.second + (collectedHits[hit.first] ?: 0.0)
+
+                    if (intersectedHits == null) {
+                        intersectedHits = hits.associateTo(mutableMapOf()) { it.first to it.second }
+                    } else {
+                        val current = intersectedHits ?: mutableMapOf()
+                        val updated = mutableMapOf<String, Double>()
+                        hits.forEach { (docId, score) ->
+                            val previousScore = current[docId]
+                            if (previousScore != null) {
+                                updated[docId] = previousScore + score
                             }
                         }
+                        if (updated.isEmpty()) {
+                            return emptyList()
+                        }
+                        intersectedHits = updated
                     }
+                }
+
+                intersectedHits?.forEach { (docId, score) ->
+                    collectedHits[docId] = score
                 }
             } else {
                 val termHits = searchTerms.map { fieldIndex.searchTerm(it,prefixMatch) }

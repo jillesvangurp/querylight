@@ -41,4 +41,13 @@ class RankingTest {
         results[1].first shouldBe expected[1].first
         results[1].second shouldBe (expected[1].second plusOrMinus 1e-6)
     }
+
+    @Test
+    fun matchQueryWithAndRequiresAllTerms() {
+        val tfidf = index(RankingAlgorithm.TFIDF)
+        tfidf.search(MatchQuery("text", "foo baz", operation = OP.AND)) shouldBe emptyList()
+
+        val bm25 = index(RankingAlgorithm.BM25)
+        bm25.search(MatchQuery("text", "foo baz", operation = OP.AND)) shouldBe emptyList()
+    }
 }
