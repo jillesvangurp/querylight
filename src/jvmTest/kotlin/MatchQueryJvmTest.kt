@@ -1,5 +1,6 @@
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import search.Document
 import search.DocumentIndex
 import search.MatchQuery
@@ -53,6 +54,28 @@ class MatchQueryJvmTest {
             }
 
             assertEquals(expectedScore, hits.first().second, 1e-10)
+        }
+    }
+
+    @Test
+    fun prefixMatchesAccumulateTermFrequency() {
+        val documents = listOf(
+            Document("1", mapOf("text" to listOf("carpet carpool car drive"))),
+            Document("2", mapOf("text" to listOf("car drive drive drive"))),
+            Document("3", mapOf("text" to listOf("dog")))
+        )
+
+        listOf(RankingAlgorithm.TFIDF, RankingAlgorithm.BM25).forEach { algorithm ->
+            val index = buildIndex(algorithm, documents)
+            val matchQueryHits = index.search(MatchQuery("text", "car", prefixMatch = true))
+            assertEquals(listOf("1", "2"), matchQueryHits.map { it.first })
+            assertTrue(matchQueryHits[0].second > matchQueryHits[1].second)
+
+            val fieldIndex = index.getFieldIndex("text") as TextFieldIndex
+            val prefixHits = fieldIndex.searchPrefix("car")
+
+            assertEquals(listOf("1", "2"), prefixHits.map { it.first })
+            assertTrue(prefixHits[0].second > prefixHits[1].second)
         }
     }
 }

@@ -75,11 +75,21 @@ class TextFieldIndex(
      * Returns a list of docId to tf/idf score
      */
     fun searchTerm(term: String, allowPrefixMatch: Boolean = false): List<Hit> {
-        val matches = termMatches(term) ?: if (allowPrefixMatch) {
-            trie.match(term).flatMap { t -> termMatches(t) ?: listOf() }.distinct().takeIf { it.isNotEmpty() }
-        } else null
+        val matches = mutableListOf<TermPos>()
+        termMatches(term)?.let { matches.addAll(it) }
 
-        return matches?.let { calculateScore(it.map { it.id }) } ?: emptyList()
+        if (allowPrefixMatch) {
+            trie.match(term).forEach { matchedTerm ->
+                termMatches(matchedTerm)?.let { matches.addAll(it) }
+            }
+        }
+
+        val uniqueMatches = matches.distinct()
+        return if (uniqueMatches.isNotEmpty()) {
+            calculateScore(uniqueMatches.map { it.id })
+        } else {
+            emptyList()
+        }
     }
 
     fun searchPhrase(terms: List<String>, slop: Int = 0): List<Hit> {
@@ -108,7 +118,9 @@ class TextFieldIndex(
 
     fun searchPrefix(prefix: String): List<Hit> {
         val terms = trie.match(prefix)
-        val docIds = terms.flatMap { termMatches(it)?.map { it.id } ?: listOf() }.distinct()
+        val docIds = terms.flatMap { term ->
+            termMatches(term)?.map { it.id } ?: emptyList()
+        }
         return calculateScore(docIds)
     }
 
