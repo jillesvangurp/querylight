@@ -4,6 +4,8 @@ Querylight is an in memory, Kotlin multiplatform text indexing library that impl
 
 This is my attempt at building a small Kotlin library for implementing offline search in e.g. a website or inside a mobile phone app (Android, iOS, etc.). This is currently quite early stage and the API can and will change. For documentation, refer to the tests.
 
+If you are looking for a more feature rich TypeScript successor, see [formation-res/querylight-ts](https://github.com/formation-res/querylight-ts).
+
 ## General design
 
 Users of Elasticsearch will recognize a thing or two. I loosely follow their DSL. At the core is a simple in memory reverse index. Ranking is pluggable and selected via `RankingAlgorithm`; by default TF‑IDF is used but you can switch to BM25. I've implemented a simple Analyzer structure similar to what Elasticsearch has and there's `MatchQuery` and `BoolQuery` that are usable for simple queries.
@@ -171,4 +173,3 @@ val results = index.search { query = GeoPolygonQuery("location", bbox) }
 ```
 
 Currently there are a handful of queries supported. `BoolQuery` is loosely styled after the Elasticsearch/OpenSearch bool query. Same for `MatchQuery`, `MatchPhrase`, `TermQuery`, `RangeQuery` and `MatchAll`.
-

@@ -2,12 +2,11 @@
 
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalWasmDsl
 
 
 plugins {
-    kotlin("multiplatform")
-    kotlin("plugin.serialization")
+    id("org.jetbrains.kotlin.multiplatform")
+    id("org.jetbrains.kotlin.plugin.serialization")
     id("maven-publish")
 }
 
@@ -50,7 +49,6 @@ kotlin {
         }
     }
     mingwX64()
-    macosX64()
     macosArm64()
     linuxX64()
     linuxArm64()
@@ -139,8 +137,8 @@ kotlin {
             languageSettings {
                 optIn("kotlin.RequiresOptIn")
 //                optIn("kotlinx.coroutines.ExperimentalCoroutinesApi")
-                languageVersion = "1.9"
-                apiVersion = "1.9"
+                languageVersion = "2.1"
+                apiVersion = "2.1"
             }
         }
     }
