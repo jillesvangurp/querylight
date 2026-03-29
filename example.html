@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Querylight Example</title>
+</head>
+<body>
+<input id="q" placeholder="search"/>
+<ul id="results"></ul>
+<script src="querylight.js"></script>
+<script>
+async function init() {
+    const resp = await fetch('index.json');
+    const json = await resp.text();
+    const engine = querylight.QuerylightJs.fromJson(json);
+    document.getElementById('q').addEventListener('input', ev => {
+        const term = ev.target.value;
+        const hits = engine.search(term, 10);
+        const ul = document.getElementById('results');
+        ul.innerHTML = '';
+        hits.forEach(id => {
+            const li = document.createElement('li');
+            li.textContent = id;
+            ul.appendChild(li);
+        });
+    });
+}
+init();
+</script>
+</body>
+</html>

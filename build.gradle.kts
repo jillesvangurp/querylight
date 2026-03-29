@@ -109,6 +109,13 @@ kotlin {
             }
         }
 
+        jvmMain {
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.6")
+                implementation("org.yaml:snakeyaml:2.2")
+            }
+        }
+
         jvmTest {
             dependencies {
                 implementation(kotlin("test-junit"))
